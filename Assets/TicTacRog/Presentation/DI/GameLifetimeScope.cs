@@ -30,7 +30,8 @@ namespace TicTacRog.Presentation.DI
                 .As<IGameRuleSet>();
 
             // Ўина и событи€
-            builder.Register<EventBus>(Lifetime.Singleton);
+            builder.Register<MessageBus>(Lifetime.Singleton)
+                .As<IMessageBus>();
             builder.Register<GameEventsAdapter>(Lifetime.Singleton)
                 .As<IGameEvents>();
 

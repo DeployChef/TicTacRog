@@ -1,12 +1,12 @@
 ﻿using TicTacRog.Core.Domain;
 
-namespace TicTacRog.Infrastructure.Events
+namespace TicTacRog.Infrastructure.Events.Messages
 {
-    public readonly struct MoveMadeEvent
+    public readonly struct MoveMadeMessage
     {
         public GameState State { get; }
         public CellIndex LastMove { get; }
-        public MoveMadeEvent(GameState state, CellIndex lastMove)
+        public MoveMadeMessage(GameState state, CellIndex lastMove)
         {
             State = state;
             LastMove = lastMove;

@@ -1,6 +1,8 @@
+using System;
 using TicTacRog.Core.Domain;
 using TicTacRog.Core.UseCases;
 using TicTacRog.Infrastructure.Events;
+using TicTacRog.Infrastructure.Events.Messages;
 using TicTacRog.Infrastructure.Repositories;
 using TicTacRog.Presentation.Views;
 
@@ -10,24 +12,28 @@ namespace TicTacRog.Presentation.Presenters
     {
         private readonly BoardView _boardView;
         private readonly StatusView _statusView;
-        private readonly EventBus _eventBus;
-        private readonly StartNewGameUseCase _startNewGameUseCase;
-        private readonly MakeMoveUseCase _makeMoveUseCase;
+        private readonly IMessageBus _bus;
+        private readonly StartNewGameUseCase _startNewGame;
+        private readonly MakeMoveUseCase _makeMove;
         private readonly IBoardRepository _repository;
+
+        private IDisposable _startedSub;
+        private IDisposable _movedSub;
+        private IDisposable _finishedSub;
 
         public GamePresenter(
             BoardView boardView,
             StatusView statusView,
-            EventBus eventBus,
-            StartNewGameUseCase startNewGameUseCase,
-            MakeMoveUseCase makeMoveUseCase,
+            IMessageBus bus,
+            StartNewGameUseCase startNewGame,
+            MakeMoveUseCase makeMove,
             IBoardRepository repository)
         {
             _boardView = boardView;
             _statusView = statusView;
-            _eventBus = eventBus;
-            _startNewGameUseCase = startNewGameUseCase;
-            _makeMoveUseCase = makeMoveUseCase;
+            _bus = bus;
+            _startNewGame = startNewGame;
+            _makeMove = makeMove;
             _repository = repository;
         }
 
@@ -35,26 +41,45 @@ namespace TicTacRog.Presentation.Presenters
         {
             BuildBoard();
 
-            _eventBus.Subscribe<GameStartedEvent>(OnGameStarted);
-            _eventBus.Subscribe<MoveMadeEvent>(OnMoveMade);
-            _eventBus.Subscribe<GameFinishedEvent>(OnGameFinished);
+            _startedSub = _bus.Subscribe<GameStartedMessage>(m => RedrawBoard(m.State));
+            _movedSub = _bus.Subscribe<MoveMadeMessage>(m => RedrawBoard(m.State));
+            _finishedSub = _bus.Subscribe<GameFinishedMessage>(m => RedrawBoard(m.State));
 
             _statusView.ResetButton.onClick.AddListener(OnResetClicked);
-
             RedrawBoard(_repository.GetCurrent());
         }
 
-        private void OnGameStarted(GameStartedEvent evt)
+        public void Dispose()
+        {
+            _startedSub?.Dispose();
+            _movedSub?.Dispose();
+            _finishedSub?.Dispose();
+            _statusView.ResetButton.onClick.RemoveListener(OnResetClicked);
+        }
+
+        private void OnResetClicked()
+        {
+            var size = _repository.GetCurrent().Board.Size;
+            _startNewGame.Execute(size, Mark.Cross);
+        }
+
+        private void OnCellClicked(CellIndex index)
+        {
+            _makeMove.Execute(index);
+            // перерисовка придёт через сообщения
+        }
+
+        private void OnGameStarted(GameStartedMessage evt)
         {
             RedrawBoard(evt.State);
         }
 
-        private void OnMoveMade(MoveMadeEvent evt)
+        private void OnMoveMade(MoveMadeMessage evt)
         {
             RedrawBoard(evt.State);
         }
 
-        private void OnGameFinished(GameFinishedEvent evt)
+        private void OnGameFinished(GameFinishedMessage evt)
         {
             RedrawBoard(evt.State);
         }
@@ -74,11 +99,6 @@ namespace TicTacRog.Presentation.Presenters
                     view.Init(index, OnCellClicked);
                 }
             }
-        }
-
-        private void OnCellClicked(CellIndex index)
-        {
-            _makeMoveUseCase.Execute(index);
         }
 
         private void RedrawBoard(GameState state)
@@ -112,12 +132,6 @@ namespace TicTacRog.Presentation.Presenters
                     _statusView.StatusText.text = "Draw";
                     break;
             }
-        }
-
-        private void OnResetClicked()
-        {
-            var size = _repository.GetCurrent().Board.Size;
-            _startNewGameUseCase.Execute(size, Mark.Cross);
         }
     }
 }
