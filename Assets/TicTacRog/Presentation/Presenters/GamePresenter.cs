@@ -13,7 +13,7 @@ namespace TicTacRog.Presentation.Presenters
         private readonly EventBus _eventBus;
         private readonly StartNewGameUseCase _startNewGameUseCase;
         private readonly MakeMoveUseCase _makeMoveUseCase;
-        private readonly InMemoryBoardRepository _repository;
+        private readonly IBoardRepository _repository;
 
         public GamePresenter(
             BoardView boardView,
@@ -21,7 +21,7 @@ namespace TicTacRog.Presentation.Presenters
             EventBus eventBus,
             StartNewGameUseCase startNewGameUseCase,
             MakeMoveUseCase makeMoveUseCase,
-            InMemoryBoardRepository repository)
+            IBoardRepository repository)
         {
             _boardView = boardView;
             _statusView = statusView;
@@ -41,7 +41,6 @@ namespace TicTacRog.Presentation.Presenters
 
             _statusView.ResetButton.onClick.AddListener(OnResetClicked);
 
-            // на случай, если старт уже был
             RedrawBoard(_repository.GetCurrent());
         }
 
