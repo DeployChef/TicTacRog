@@ -1,6 +1,7 @@
 ﻿using TicTacRog.Core.Domain;
 using TicTacRog.Core.UseCases;
 using TicTacRog.Presentation.Presenters;
+using TicTacRog.Presentation;
 using UnityEngine;
 using VContainer.Unity;
 
@@ -16,17 +17,20 @@ namespace TicTacRog.Presentation.DI
         private readonly Mark _startingPlayer;
         private readonly StartNewGameUseCase _startNewGame;
         private readonly GamePresenter _gamePresenter;
+        private readonly BotController _botController;
 
         public GameEntryPoint(
             int boardSize,
             Mark startingPlayer,
             StartNewGameUseCase startNewGame,
-            GamePresenter gamePresenter)
+            GamePresenter gamePresenter,
+            BotController botController)
         {
             _boardSize = boardSize;
             _startingPlayer = startingPlayer;
             _startNewGame = startNewGame;
             _gamePresenter = gamePresenter;
+            _botController = botController;
         }
 
         public void Start()
@@ -41,6 +45,9 @@ namespace TicTacRog.Presentation.DI
             
             // 2. Инициализируем презентер (подписывается на события, строит UI)
             _gamePresenter.Initialize();
+            
+            // 3. Инициализируем контроллер бота (подписывается на State Machine)
+            _botController.Initialize();
             
             Debug.Log("[GameEntryPoint] Game started successfully!");
         }

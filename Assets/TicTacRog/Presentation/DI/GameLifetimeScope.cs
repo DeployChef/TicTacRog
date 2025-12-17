@@ -2,6 +2,7 @@ using TicTacRog.Core.Domain;
 using TicTacRog.Core.UseCases;
 using TicTacRog.Infrastructure.Events;
 using TicTacRog.Infrastructure.Repositories;
+using TicTacRog.Presentation;
 using TicTacRog.Presentation.Presenters;
 using TicTacRog.Presentation.Views;
 using TicTacRog.Presentation.Animation;
@@ -66,11 +67,14 @@ namespace TicTacRog.Presentation.DI
             builder.Register<StartNewGameUseCase>(Lifetime.Singleton);
             builder.Register<MakeMoveUseCase>(Lifetime.Singleton);
 
-            // State Machine (НОВОЕ!)
-            builder.Register<GameFlowStateMachine>(Lifetime.Singleton)
+            // State Machine (управляет состояниями UI)
+            builder.Register<GameFlowStateMachine>(Lifetime.Singleton);
+
+            // Bot Controller (управляет ходами бота)
+            builder.Register<BotController>(Lifetime.Singleton)
                 .WithParameter("botThinkDelay", _botThinkDelay);
 
-            // Presenter (ОБНОВЛЕН для State Machine)
+            // Presenter
             builder.Register<GamePresenter>(Lifetime.Singleton);
 
             // Entry Point

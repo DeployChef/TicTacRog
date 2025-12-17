@@ -25,6 +25,7 @@
 │  • Views (BoardView, CellView)      │
 │  • Presenters (GamePresenter)       │
 │  • State Machine (GameFlowSM)       │
+│  • BotController                    │
 │  • Animation Queue                  │
 └──────────────┬──────────────────────┘
                ↓ зависит от

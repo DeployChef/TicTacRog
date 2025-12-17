@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using UnityEngine;
 using TicTacRog.Core.Domain;
 using TicTacRog.Core.UseCases;
@@ -9,21 +8,18 @@ using TicTacRog.Presentation.Animation;
 namespace TicTacRog.Presentation.StateMachine
 {
     /// <summary>
-    /// State Machine для управления игровым потоком
-    /// Управляет переходами между состояниями UI в зависимости от игровой логики
+    /// State Machine для управления игровым потоком UI
+    /// Отвечает ТОЛЬКО за состояния: WaitingForPlayer, AnimatingMove, BotThinking, GameFinished
+    /// НЕ управляет ботом напрямую - это делает BotController
     /// </summary>
     public sealed class GameFlowStateMachine : IDisposable
     {
-        private readonly IBotPlayer _botPlayer;
         private readonly IBoardRepository _repository;
         private readonly AnimationQueue _animationQueue;
-        private readonly MonoBehaviour _coroutineRunner;
 
         private GameFlowState _currentState = GameFlowState.WaitingForPlayerInput;
         private GameFlowState _previousState;
-        private Coroutine _currentCoroutine;
 
-        public float BotThinkDelay { get; set; } = 0.5f;
         public bool EnableDebugLogs { get; set; } = true;
 
         public GameFlowState CurrentState => _currentState;
@@ -42,15 +38,11 @@ namespace TicTacRog.Presentation.StateMachine
         public event Action OnEnteredGameFinished;
 
         public GameFlowStateMachine(
-            IBotPlayer botPlayer,
             IBoardRepository repository,
-            AnimationQueue animationQueue,
-            MonoBehaviour coroutineRunner)
+            AnimationQueue animationQueue)
         {
-            _botPlayer = botPlayer ?? throw new ArgumentNullException(nameof(botPlayer));
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _animationQueue = animationQueue ?? throw new ArgumentNullException(nameof(animationQueue));
-            _coroutineRunner = coroutineRunner ?? throw new ArgumentNullException(nameof(coroutineRunner));
         }
 
         public void Initialize()
@@ -62,12 +54,6 @@ namespace TicTacRog.Presentation.StateMachine
         public void Dispose()
         {
             _animationQueue.OnQueueCompleted -= OnAnimationCompleted;
-            
-            if (_currentCoroutine != null)
-            {
-                _coroutineRunner.StopCoroutine(_currentCoroutine);
-                _currentCoroutine = null;
-            }
         }
 
         /// <summary>
@@ -97,13 +83,6 @@ namespace TicTacRog.Presentation.StateMachine
         /// </summary>
         public void OnGameStarted()
         {
-            // Останавливаем текущую корутину если есть
-            if (_currentCoroutine != null)
-            {
-                _coroutineRunner.StopCoroutine(_currentCoroutine);
-                _currentCoroutine = null;
-            }
-
             TransitionTo(GameFlowState.WaitingForPlayerInput);
         }
 
@@ -117,6 +96,7 @@ namespace TicTacRog.Presentation.StateMachine
 
         /// <summary>
         /// Вызывается когда очередь анимаций завершена
+        /// ВАЖНО: Это означает что ВСЕ анимации в очереди закончились!
         /// </summary>
         private void OnAnimationCompleted()
         {
@@ -131,11 +111,19 @@ namespace TicTacRog.Presentation.StateMachine
                 return;
             }
 
-            // Определяем следующее состояние
+            // Определяем следующее состояние на основе ТЕКУЩЕГО состояния
+            // Когда очередь завершена, мы знаем что анимация для текущего состояния закончилась
             switch (_currentState)
             {
                 case GameFlowState.AnimatingPlayerMove:
                     HandlePlayerMoveAnimationCompleted(state);
+                    break;
+                
+                case GameFlowState.BotThinking:
+                    // Бот сделал ход и анимация ЗАКОНЧИЛАСЬ (OnQueueCompleted)
+                    // Обрабатываем как завершение хода бота
+                    Log("BotThinking animation completed → checking next state");
+                    HandleBotMoveAnimationCompleted(state);
                     break;
 
                 case GameFlowState.AnimatingBotMove:
@@ -149,9 +137,9 @@ namespace TicTacRog.Presentation.StateMachine
             // После анимации хода игрока проверяем, чей ход
             if (state.CurrentPlayer == Mark.Nought)
             {
-                // Ход бота
+                // Ход бота - переходим в состояние BotThinking
+                // BotController услышит это событие и вызовет бота
                 TransitionTo(GameFlowState.BotThinking);
-                _currentCoroutine = _coroutineRunner.StartCoroutine(BotThinkCoroutine());
             }
             else
             {
@@ -171,40 +159,6 @@ namespace TicTacRog.Presentation.StateMachine
             {
                 // Если вдруг опять ход бота (в режиме Bot vs Bot)
                 TransitionTo(GameFlowState.BotThinking);
-                _currentCoroutine = _coroutineRunner.StartCoroutine(BotThinkCoroutine());
-            }
-        }
-
-        private IEnumerator BotThinkCoroutine()
-        {
-            Log($"Bot thinking for {BotThinkDelay}s...");
-            
-            yield return new WaitForSeconds(BotThinkDelay);
-
-            _currentCoroutine = null;
-
-            var state = _repository.GetCurrent();
-            
-            // Проверяем что игра всё ещё в процессе
-            if (state.Status != GameStatus.InProgress)
-            {
-                Log("Game finished while bot was thinking");
-                TransitionTo(GameFlowState.GameFinished);
-                yield break;
-            }
-
-            // Бот делает ход
-            bool moveMade = _botPlayer.TryMakeMove(state);
-            
-            if (moveMade)
-            {
-                Log("Bot made move, transitioning to AnimatingBotMove");
-                TransitionTo(GameFlowState.AnimatingBotMove);
-            }
-            else
-            {
-                LogWarning("Bot failed to make move");
-                TransitionTo(GameFlowState.WaitingForPlayerInput);
             }
         }
 
