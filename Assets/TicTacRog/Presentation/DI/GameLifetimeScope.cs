@@ -1,5 +1,6 @@
 using TicTacRog.Core.Domain;
 using TicTacRog.Core.UseCases;
+using TicTacRog.Infrastructure;
 using TicTacRog.Infrastructure.Events;
 using TicTacRog.Infrastructure.Repositories;
 using TicTacRog.Presentation.Presenters;
@@ -34,6 +35,11 @@ namespace TicTacRog.Presentation.DI
                 .As<IMessageBus>();
             builder.Register<GameEventsAdapter>(Lifetime.Singleton)
                 .As<IGameEvents>();
+
+            builder.Register<RandomBotPlayer>(Lifetime.Singleton)
+                .As<IBotPlayer>();
+
+            builder.Register<BotListener>(Lifetime.Singleton);
 
             // Use cases
             builder.Register<StartNewGameUseCase>(Lifetime.Singleton);
