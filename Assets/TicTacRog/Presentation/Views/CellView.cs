@@ -65,18 +65,61 @@ namespace TicTacRog.Presentation.Views
         /// </summary>
         public void SetMarkImmediate(Mark mark)
         {
-            // Убиваем текущую анимацию если есть
-            _currentAnimation?.Kill();
+            // Убиваем ВСЕ анимации на этой клетке
+            KillAllAnimations();
             
             _currentMark = mark;
             UpdateLabel();
+            
+            // Сбрасываем в нормальное состояние
+            ResetToNormalState();
+        }
+        
+        /// <summary>
+        /// Останавливает текущую анимацию (вызывается извне)
+        /// </summary>
+        public void StopCurrentAnimation()
+        {
+            KillAllAnimations();
+        }
+        
+        /// <summary>
+        /// Останавливает все анимации на клетке
+        /// </summary>
+        private void KillAllAnimations()
+        {
+            _currentAnimation?.Kill();
+            transform.DOKill();
+            if (_label != null) _label.DOKill();
+            if (_background != null) _background.DOKill();
+        }
+        
+        /// <summary>
+        /// Возвращает клетку в нормальное визуальное состояние
+        /// </summary>
+        private void ResetToNormalState()
+        {
+            // Нормальный размер
             transform.localScale = Vector3.one;
             
+            // Нормальный цвет фона
+            if (_background != null)
+            {
+                _background.color = _normalColor;
+            }
+            
+            // Видимый текст
             if (_label != null)
             {
                 var color = _label.color;
                 color.a = 1f;
                 _label.color = color;
+            }
+            
+            // Полная видимость
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.alpha = 1f;
             }
         }
 
@@ -167,7 +210,11 @@ namespace TicTacRog.Presentation.Views
         /// </summary>
         public void PlayErrorShake()
         {
-            transform.DOShakePosition(0.3f, strength: 10f, vibrato: 10)
+            // Убиваем предыдущую shake анимацию (иначе наслаиваются)
+            transform.DOKill(complete: true); // complete: true вернет на место автоматически
+            
+            // Shake с автоматическим возвратом (fadeOut делает плавное затухание)
+            transform.DOShakePosition(0.3f, strength: 10f, vibrato: 10, randomness: 90, snapping: false, fadeOut: true)
                 .SetEase(Ease.OutQuad);
         }
 

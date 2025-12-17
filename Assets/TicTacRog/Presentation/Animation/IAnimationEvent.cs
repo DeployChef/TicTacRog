@@ -11,6 +11,11 @@ namespace TicTacRog.Presentation.Animation
         /// Проигрывает анимацию события
         /// </summary>
         IEnumerator PlayAnimation();
+        
+        /// <summary>
+        /// Останавливает текущую анимацию (для прерывания)
+        /// </summary>
+        void StopAnimation();
     }
 }
 

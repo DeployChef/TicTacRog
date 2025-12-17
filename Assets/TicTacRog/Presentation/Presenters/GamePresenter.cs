@@ -129,9 +129,17 @@ namespace TicTacRog.Presentation.Presenters
             
             Debug.Log("[GamePresenter] Reset button clicked");
             
-            var size = _repository.GetCurrent().Board.Size;
+            // 1. Останавливаем все анимации
             _animationQueue.Clear();
             
+            // 2. Принудительно сбрасываем все клетки (на случай если анимация не успела остановиться)
+            foreach (var cellView in _cellViews.Values)
+            {
+                cellView.SetMarkImmediate(Mark.None);
+            }
+            
+            // 3. Запускаем новую игру
+            var size = _repository.GetCurrent().Board.Size;
             var result = _startNewGame.Execute(size, Mark.Cross);
             if (!result.IsSuccess)
             {

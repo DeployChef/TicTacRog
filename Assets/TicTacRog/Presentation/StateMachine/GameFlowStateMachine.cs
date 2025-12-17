@@ -91,6 +91,13 @@ namespace TicTacRog.Presentation.StateMachine
         /// </summary>
         public void OnGameFinished()
         {
+            // Защита от повторного вызова
+            if (_currentState == GameFlowState.GameFinished)
+            {
+                Log("OnGameFinished called but already in GameFinished state");
+                return;
+            }
+            
             TransitionTo(GameFlowState.GameFinished);
         }
 
@@ -107,7 +114,15 @@ namespace TicTacRog.Presentation.StateMachine
             // Игра завершена?
             if (state.Status != GameStatus.InProgress)
             {
-                TransitionTo(GameFlowState.GameFinished);
+                // Если уже в GameFinished, не пытаться перейти туда снова
+                if (_currentState != GameFlowState.GameFinished)
+                {
+                    TransitionTo(GameFlowState.GameFinished);
+                }
+                else
+                {
+                    Log("Already in GameFinished state, skipping transition");
+                }
                 return;
             }
 

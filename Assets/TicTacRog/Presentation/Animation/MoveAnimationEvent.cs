@@ -32,6 +32,12 @@ namespace TicTacRog.Presentation.Animation
             // Проигрываем анимацию
             yield return _cellView.PlayAnimation();
         }
+        
+        public void StopAnimation()
+        {
+            // Останавливаем анимацию в CellView
+            _cellView.StopCurrentAnimation();
+        }
     }
 }
 

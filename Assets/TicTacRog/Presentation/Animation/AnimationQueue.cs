@@ -13,6 +13,8 @@ namespace TicTacRog.Presentation.Animation
     {
         private readonly Queue<IAnimationEvent> _queue = new();
         private bool _isPlaying = false;
+        private Coroutine _currentCoroutine;
+        private IAnimationEvent _currentEvent;
 
         /// <summary>
         /// Добавляет событие в очередь
@@ -24,16 +26,32 @@ namespace TicTacRog.Presentation.Animation
             // Если не играет, начинаем
             if (!_isPlaying)
             {
-                StartCoroutine(PlayQueueCoroutine());
+                _currentCoroutine = StartCoroutine(PlayQueueCoroutine());
             }
         }
 
         /// <summary>
-        /// Очищает очередь
+        /// Очищает очередь И останавливает текущую анимацию
         /// </summary>
         public void Clear()
         {
             _queue.Clear();
+            
+            // Останавливаем анимацию текущего события (DOTween и т.д.)
+            if (_currentEvent != null)
+            {
+                _currentEvent.StopAnimation();
+                _currentEvent = null;
+            }
+            
+            // Останавливаем текущую корутину
+            if (_currentCoroutine != null)
+            {
+                StopCoroutine(_currentCoroutine);
+                _currentCoroutine = null;
+            }
+            
+            _isPlaying = false;
         }
 
         /// <summary>
@@ -63,16 +81,20 @@ namespace TicTacRog.Presentation.Animation
             while (_queue.Count > 0)
             {
                 var animEvent = _queue.Dequeue();
+                _currentEvent = animEvent;
                 
                 OnEventStarted?.Invoke(animEvent);
                 
                 // Проигрываем анимацию
                 yield return animEvent.PlayAnimation();
                 
+                _currentEvent = null;
                 OnEventCompleted?.Invoke(animEvent);
             }
 
             _isPlaying = false;
+            _currentCoroutine = null;
+            _currentEvent = null;
             OnQueueCompleted?.Invoke();
         }
     }
