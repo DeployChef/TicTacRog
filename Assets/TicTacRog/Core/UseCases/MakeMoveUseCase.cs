@@ -1,40 +1,44 @@
 ﻿using TicTacRog.Core.Domain;
+using TicTacRog.Core.UseCases;
 
-namespace TicTacRog.Core.UseCases
+public sealed class MakeMoveUseCase
 {
-    public sealed class MakeMoveUseCase
+    private readonly IBoardRepository _boardRepository;
+    private readonly IGameRuleSet _ruleSet;
+    private readonly IGameEvents _gameEvents;
+
+    public MakeMoveUseCase(IBoardRepository boardRepository, IGameRuleSet ruleSet, IGameEvents gameEvents)
     {
-        private readonly IBoardRepository _boardRepository;
-        private readonly IGameRuleSet _ruleSet;
+        _boardRepository = boardRepository;
+        _ruleSet = ruleSet;
+        _gameEvents = gameEvents;
+    }
 
-        public MakeMoveUseCase(IBoardRepository boardRepository, IGameRuleSet ruleSet)
+    public void Execute(CellIndex targetCell)
+    {
+        var state = _boardRepository.GetCurrent();
+        if (state.Status != GameStatus.InProgress)
+            return;
+
+        var board = state.Board;
+        if (!board.IsEmpty(targetCell))
+            return;
+
+        board.SetMark(targetCell, state.CurrentPlayer);
+
+        var status = _ruleSet.Evaluate(board, state.CurrentPlayer, targetCell);
+        state.SetStatus(status);
+
+        if (status == GameStatus.InProgress)
         {
-            _boardRepository = boardRepository;
-            _ruleSet = ruleSet;
+            state.SwitchPlayer();
+        }
+        else
+        {
+            _gameEvents.OnGameFinished(state);
         }
 
-        public void Execute(CellIndex targetCell)
-        {
-            var state = _boardRepository.GetCurrent();
-            if (state.Status != GameStatus.InProgress)
-                return;
-
-            var board = state.Board;
-
-            if (!board.IsEmpty(targetCell))
-                return; // позже можно вернуть результат/ошибку
-
-            board.SetMark(targetCell, state.CurrentPlayer);
-
-            var status = _ruleSet.Evaluate(board, state.CurrentPlayer, targetCell);
-            state.SetStatus(status);
-
-            if (status == GameStatus.InProgress)
-            {
-                state.SwitchPlayer();
-            }
-
-            _boardRepository.Save(state);
-        }
+        _boardRepository.Save(state);
+        _gameEvents.OnMoveMade(state, targetCell);
     }
 }

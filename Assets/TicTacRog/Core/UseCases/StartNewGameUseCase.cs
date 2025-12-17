@@ -1,21 +1,24 @@
-﻿using TicTacRog.Core.Domain;
+﻿// обновлённый StartNewGameUseCase
 
-namespace TicTacRog.Core.UseCases
+using TicTacRog.Core.Domain;
+using TicTacRog.Core.UseCases;
+
+public sealed class StartNewGameUseCase
 {
-    public sealed class StartNewGameUseCase
+    private readonly IBoardRepository _boardRepository;
+    private readonly IGameEvents _gameEvents;
+
+    public StartNewGameUseCase(IBoardRepository boardRepository, IGameEvents gameEvents)
     {
-        private readonly IBoardRepository _boardRepository;
+        _boardRepository = boardRepository;
+        _gameEvents = gameEvents;
+    }
 
-        public StartNewGameUseCase(IBoardRepository boardRepository)
-        {
-            _boardRepository = boardRepository;
-        }
-
-        public void Execute(int boardSize, Mark startingPlayer)
-        {
-            var board = new Board(boardSize);
-            var state = new GameState(board, startingPlayer);
-            _boardRepository.Save(state);
-        }
+    public void Execute(int boardSize, Mark startingPlayer)
+    {
+        var board = new Board(boardSize);
+        var state = new GameState(board, startingPlayer);
+        _boardRepository.Save(state);
+        _gameEvents.OnGameStarted(state);
     }
 }

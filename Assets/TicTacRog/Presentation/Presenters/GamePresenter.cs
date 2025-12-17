@@ -1,5 +1,6 @@
 using TicTacRog.Core.Domain;
 using TicTacRog.Core.UseCases;
+using TicTacRog.Infrastructure.Events;
 using TicTacRog.Infrastructure.Repositories;
 using TicTacRog.Presentation.Views;
 
@@ -9,6 +10,7 @@ namespace TicTacRog.Presentation.Presenters
     {
         private readonly BoardView _boardView;
         private readonly StatusView _statusView;
+        private readonly EventBus _eventBus;
         private readonly StartNewGameUseCase _startNewGameUseCase;
         private readonly MakeMoveUseCase _makeMoveUseCase;
         private readonly InMemoryBoardRepository _repository;
@@ -16,12 +18,14 @@ namespace TicTacRog.Presentation.Presenters
         public GamePresenter(
             BoardView boardView,
             StatusView statusView,
+            EventBus eventBus,
             StartNewGameUseCase startNewGameUseCase,
             MakeMoveUseCase makeMoveUseCase,
             InMemoryBoardRepository repository)
         {
             _boardView = boardView;
             _statusView = statusView;
+            _eventBus = eventBus;
             _startNewGameUseCase = startNewGameUseCase;
             _makeMoveUseCase = makeMoveUseCase;
             _repository = repository;
@@ -30,8 +34,30 @@ namespace TicTacRog.Presentation.Presenters
         public void Initialize()
         {
             BuildBoard();
+
+            _eventBus.Subscribe<GameStartedEvent>(OnGameStarted);
+            _eventBus.Subscribe<MoveMadeEvent>(OnMoveMade);
+            _eventBus.Subscribe<GameFinishedEvent>(OnGameFinished);
+
             _statusView.ResetButton.onClick.AddListener(OnResetClicked);
-            RedrawBoard();
+
+            // на случай, если старт уже был
+            RedrawBoard(_repository.GetCurrent());
+        }
+
+        private void OnGameStarted(GameStartedEvent evt)
+        {
+            RedrawBoard(evt.State);
+        }
+
+        private void OnMoveMade(MoveMadeEvent evt)
+        {
+            RedrawBoard(evt.State);
+        }
+
+        private void OnGameFinished(GameFinishedEvent evt)
+        {
+            RedrawBoard(evt.State);
         }
 
         private void BuildBoard()
@@ -54,12 +80,10 @@ namespace TicTacRog.Presentation.Presenters
         private void OnCellClicked(CellIndex index)
         {
             _makeMoveUseCase.Execute(index);
-            RedrawBoard();
         }
 
-        private void RedrawBoard()
+        private void RedrawBoard(GameState state)
         {
-            var state = _repository.GetCurrent();
             var cells = _boardView.CellsRoot.GetComponentsInChildren<CellView>();
 
             foreach (var cell in cells)
@@ -93,8 +117,8 @@ namespace TicTacRog.Presentation.Presenters
 
         private void OnResetClicked()
         {
-            _startNewGameUseCase.Execute(_repository.GetCurrent().Board.Size, Mark.Cross);
-            RedrawBoard();
+            var size = _repository.GetCurrent().Board.Size;
+            _startNewGameUseCase.Execute(size, Mark.Cross);
         }
     }
 }
