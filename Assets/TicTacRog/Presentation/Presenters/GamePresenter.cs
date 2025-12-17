@@ -8,15 +8,21 @@ namespace TicTacRog.Presentation.Presenters
     public sealed class GamePresenter
     {
         private readonly BoardView _boardView;
+        private readonly StatusView _statusView;
+        private readonly StartNewGameUseCase _startNewGameUseCase;
         private readonly MakeMoveUseCase _makeMoveUseCase;
         private readonly InMemoryBoardRepository _repository;
 
         public GamePresenter(
             BoardView boardView,
+            StatusView statusView,
+            StartNewGameUseCase startNewGameUseCase,
             MakeMoveUseCase makeMoveUseCase,
             InMemoryBoardRepository repository)
         {
             _boardView = boardView;
+            _statusView = statusView;
+            _startNewGameUseCase = startNewGameUseCase;
             _makeMoveUseCase = makeMoveUseCase;
             _repository = repository;
         }
@@ -24,6 +30,7 @@ namespace TicTacRog.Presentation.Presenters
         public void Initialize()
         {
             BuildBoard();
+            _statusView.ResetButton.onClick.AddListener(OnResetClicked);
             RedrawBoard();
         }
 
@@ -64,6 +71,30 @@ namespace TicTacRog.Presentation.Presenters
                 var mark = state.Board.GetMark(new CellIndex(row, col));
                 cell.SetMark(mark);
             }
+
+            UpdateStatusText(state);
+        }
+
+        private void UpdateStatusText(GameState state)
+        {
+            switch (state.Status)
+            {
+                case GameStatus.InProgress:
+                    _statusView.StatusText.text = state.CurrentPlayer == Mark.Cross ? "Turn: X" : "Turn: O";
+                    break;
+                case GameStatus.Win:
+                    _statusView.StatusText.text = state.CurrentPlayer == Mark.Cross ? "Win: X" : "Win: O";
+                    break;
+                case GameStatus.Draw:
+                    _statusView.StatusText.text = "Draw";
+                    break;
+            }
+        }
+
+        private void OnResetClicked()
+        {
+            _startNewGameUseCase.Execute(_repository.GetCurrent().Board.Size, Mark.Cross);
+            RedrawBoard();
         }
     }
 }

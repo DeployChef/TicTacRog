@@ -12,6 +12,7 @@ namespace TicTacRog.Presentation.Entry
         [SerializeField] private int _boardSize = 3;
         [SerializeField] private Mark _startingPlayer = Mark.Cross;
         [SerializeField] private BoardView _boardView;
+        [SerializeField] private StatusView _statusView;
 
         private InMemoryBoardRepository _boardRepository;
         private Classic3x3RuleSet _ruleSet;
@@ -32,7 +33,7 @@ namespace TicTacRog.Presentation.Entry
 
             _startNewGame.Execute(_boardSize, _startingPlayer);
 
-            _gamePresenter = new GamePresenter(_boardView, _makeMove, _boardRepository);
+            _gamePresenter = new GamePresenter(_boardView, _statusView, _startNewGame, _makeMove, _boardRepository);
             _gamePresenter.Initialize();
         }
     }
