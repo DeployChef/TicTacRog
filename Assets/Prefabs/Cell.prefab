@@ -149,6 +149,7 @@ GameObject:
   - component: {fileID: 8392828273320507223}
   - component: {fileID: 4873187818676283530}
   - component: {fileID: 5274991955432450626}
+  - component: {fileID: 1596523470655088820}
   m_Layer: 5
   m_Name: Cell
   m_TagString: Untagged
@@ -272,3 +273,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TicTacRog.Presentation.Views.CellView
   _button: {fileID: 4873187818676283530}
   _label: {fileID: 8065222171678976262}
+  _canvasGroup: {fileID: 1596523470655088820}
+  _background: {fileID: 8392828273320507223}
+  _animationDuration: 0.4
+  _scaleEase: 27
+  _punchScale: 1.15
+  _normalColor: {r: 1, g: 1, b: 1, a: 1}
+  _highlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+--- !u!225 &1596523470655088820
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7015039352655714664}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
