@@ -1,8 +1,12 @@
-﻿using System;
+using System;
 using TicTacRog.Core.Domain;
+using TicTacRog.Core.UseCases;
 
-namespace TicTacRog.Core.UseCases
+namespace TicTacRog.Infrastructure.Bot
 {
+    /// <summary>
+    /// Бот, который делает случайный ход среди доступных клеток.
+    /// </summary>
     public sealed class RandomBotPlayer : IBotPlayer
     {
         private readonly IBoardRepository _repository;
@@ -40,8 +44,9 @@ namespace TicTacRog.Core.UseCases
                 return false;
 
             var choice = empty[_random.Next(empty.Count)];
-            _makeMoveUseCase.Execute(choice);
-            return true;
+            var result = _makeMoveUseCase.Execute(choice);
+            return result.IsSuccess;
         }
     }
 }
+

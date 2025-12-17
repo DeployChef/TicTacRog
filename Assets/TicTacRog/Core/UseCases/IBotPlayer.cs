@@ -1,4 +1,6 @@
-﻿namespace TicTacRog.Core.UseCases
+﻿using TicTacRog.Core.Domain;
+
+namespace TicTacRog.Core.UseCases
 {
     public interface IBotPlayer
     {

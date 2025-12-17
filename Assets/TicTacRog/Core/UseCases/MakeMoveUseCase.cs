@@ -1,33 +1,51 @@
-﻿using TicTacRog.Core.Domain;
-using TicTacRog.Core.UseCases;
+﻿using TicTacRog.Core.Common;
+using TicTacRog.Core.Domain;
 
-public sealed class MakeMoveUseCase
+namespace TicTacRog.Core.UseCases
 {
-    private readonly IBoardRepository _boardRepository;
-    private readonly IGameRuleSet _ruleSet;
-    private readonly IGameEvents _gameEvents;
-
-    public MakeMoveUseCase(IBoardRepository boardRepository, IGameRuleSet ruleSet, IGameEvents gameEvents)
+    public sealed class MakeMoveUseCase
     {
-        _boardRepository = boardRepository;
-        _ruleSet = ruleSet;
-        _gameEvents = gameEvents;
-    }
+        private readonly IBoardRepository _boardRepository;
+        private readonly IGameRuleSet _ruleSet;
+        private readonly IGameEvents _gameEvents;
 
-    public void Execute(CellIndex targetCell)
-    {
-        var state = _boardRepository.GetCurrent();
-        if (state.Status != GameStatus.InProgress)
-            return;
+        public MakeMoveUseCase(IBoardRepository boardRepository, IGameRuleSet ruleSet, IGameEvents gameEvents)
+        {
+            _boardRepository = boardRepository;
+            _ruleSet = ruleSet;
+            _gameEvents = gameEvents;
+        }
 
-        var board = state.Board;
-        if (!board.IsEmpty(targetCell))
-            return;
+        public Result Execute(CellIndex targetCell)
+        {
+            var state = _boardRepository.GetCurrent();
+            if (state == null)
+                return Result.Failure("Game state not found.");
+            
+            if (state.Status != GameStatus.InProgress)
+                return Result.Failure("Game is not in progress.");
 
-        board.SetMark(targetCell, state.CurrentPlayer);
+            var board = state.Board;
+            if (!board.IsEmpty(targetCell))
+                return Result.Failure("Cell is already occupied.");
 
-        var status = _ruleSet.Evaluate(board, state.CurrentPlayer, targetCell);
-        state.SetStatus(status);
+        var currentPlayer = state.CurrentPlayer;
+        board.SetMark(targetCell, currentPlayer);
+        
+        // Записываем ход в историю
+        state.History.AddMove(targetCell, currentPlayer);
+
+        var status = _ruleSet.Evaluate(board, currentPlayer, targetCell);
+        
+        // Устанавливаем статус и победителя
+        if (status == GameStatus.Win)
+        {
+            state.SetStatus(status, currentPlayer);  // Победитель = текущий игрок
+        }
+        else
+        {
+            state.SetStatus(status);
+        }
 
         if (status == GameStatus.InProgress)
         {
@@ -40,5 +58,8 @@ public sealed class MakeMoveUseCase
 
         _boardRepository.Save(state);
         _gameEvents.OnMoveMade(state, targetCell);
+        
+        return Result.Success();
+    }
     }
 }

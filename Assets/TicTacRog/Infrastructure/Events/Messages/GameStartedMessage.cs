@@ -1,4 +1,6 @@
-﻿namespace TicTacRog.Infrastructure.Events.Messages
+﻿using TicTacRog.Core.Domain;
+
+namespace TicTacRog.Infrastructure.Events.Messages
 {
     public readonly struct GameStartedMessage
     {

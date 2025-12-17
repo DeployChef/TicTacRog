@@ -131,7 +131,12 @@ namespace TicTacRog.Presentation.Presenters
             
             var size = _repository.GetCurrent().Board.Size;
             _animationQueue.Clear();
-            _startNewGame.Execute(size, Mark.Cross);
+            
+            var result = _startNewGame.Execute(size, Mark.Cross);
+            if (!result.IsSuccess)
+            {
+                Debug.LogError($"[GamePresenter] Failed to start new game: {result.ErrorMessage}");
+            }
         }
 
         private void OnCellClicked(CellIndex index)
@@ -164,7 +169,13 @@ namespace TicTacRog.Presentation.Presenters
             }
             
             // Домен просчитывает мгновенно
-            _makeMove.Execute(index);
+            var result = _makeMove.Execute(index);
+            
+            if (!result.IsSuccess)
+            {
+                Debug.LogError($"[GamePresenter] Failed to make move: {result.ErrorMessage}");
+                return;
+            }
             
             // Уведомляем State Machine
             _stateMachine.OnPlayerMoved();

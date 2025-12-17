@@ -1,5 +1,6 @@
 using TicTacRog.Core.Domain;
 using TicTacRog.Core.UseCases;
+using TicTacRog.Infrastructure.Bot;
 using TicTacRog.Infrastructure.Events;
 using TicTacRog.Infrastructure.Repositories;
 using TicTacRog.Presentation;

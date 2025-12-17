@@ -41,7 +41,13 @@ namespace TicTacRog.Presentation.DI
             // Иначе презентер попытается прочитать несуществующее состояние
             
             // 1. Создаем новую игру (создает Board и GameState)
-            _startNewGame.Execute(_boardSize, _startingPlayer);
+            var result = _startNewGame.Execute(_boardSize, _startingPlayer);
+            
+            if (!result.IsSuccess)
+            {
+                Debug.LogError($"[GameEntryPoint] Failed to start game: {result.ErrorMessage}");
+                return;
+            }
             
             // 2. Инициализируем презентер (подписывается на события, строит UI)
             _gamePresenter.Initialize();

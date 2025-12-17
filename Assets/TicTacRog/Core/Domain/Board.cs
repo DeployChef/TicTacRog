@@ -38,6 +38,12 @@ namespace TicTacRog.Core.Domain
 
         private int ToFlatIndex(CellIndex index)
         {
+            if (index.Row < 0 || index.Row >= Size)
+                throw new ArgumentOutOfRangeException(nameof(index.Row), $"Row {index.Row} is out of bounds (0..{Size - 1}).");
+            
+            if (index.Column < 0 || index.Column >= Size)
+                throw new ArgumentOutOfRangeException(nameof(index.Column), $"Column {index.Column} is out of bounds (0..{Size - 1}).");
+            
             return index.Row * Size + index.Column;
         }
     }

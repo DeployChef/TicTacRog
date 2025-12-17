@@ -1,24 +1,30 @@
-﻿// обновлённый StartNewGameUseCase
-
+﻿using TicTacRog.Core.Common;
 using TicTacRog.Core.Domain;
-using TicTacRog.Core.UseCases;
 
-public sealed class StartNewGameUseCase
+namespace TicTacRog.Core.UseCases
 {
-    private readonly IBoardRepository _boardRepository;
-    private readonly IGameEvents _gameEvents;
-
-    public StartNewGameUseCase(IBoardRepository boardRepository, IGameEvents gameEvents)
+    public sealed class StartNewGameUseCase
     {
-        _boardRepository = boardRepository;
-        _gameEvents = gameEvents;
-    }
+        private readonly IBoardRepository _boardRepository;
+        private readonly IGameEvents _gameEvents;
 
-    public void Execute(int boardSize, Mark startingPlayer)
-    {
-        var board = new Board(boardSize);
-        var state = new GameState(board, startingPlayer);
-        _boardRepository.Save(state);
-        _gameEvents.OnGameStarted(state);
+        public StartNewGameUseCase(IBoardRepository boardRepository, IGameEvents gameEvents)
+        {
+            _boardRepository = boardRepository;
+            _gameEvents = gameEvents;
+        }
+
+        public Result Execute(int boardSize, Mark startingPlayer)
+        {
+            if (boardSize <= 0)
+                return Result.Failure("Board size must be positive.");
+            
+            var board = new Board(boardSize);
+            var state = new GameState(board, startingPlayer);
+            _boardRepository.Save(state);
+            _gameEvents.OnGameStarted(state);
+            
+            return Result.Success();
+        }
     }
 }
