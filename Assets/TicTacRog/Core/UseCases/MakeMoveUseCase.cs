@@ -21,7 +21,7 @@ namespace TicTacRog.Core.UseCases
             var state = _boardRepository.GetCurrent();
             if (state == null)
                 return Result.Failure("Game state not found.");
-            
+
             if (state.Status != GameStatus.InProgress)
                 return Result.Failure("Game is not in progress.");
 
@@ -29,37 +29,37 @@ namespace TicTacRog.Core.UseCases
             if (!board.IsEmpty(targetCell))
                 return Result.Failure("Cell is already occupied.");
 
-        var currentPlayer = state.CurrentPlayer;
-        board.SetMark(targetCell, currentPlayer);
-        
-        // Записываем ход в историю
-        state.History.AddMove(targetCell, currentPlayer);
+            var currentPlayer = state.CurrentPlayer;
+            board.SetMark(targetCell, currentPlayer);
 
-        var status = _ruleSet.Evaluate(board, currentPlayer, targetCell);
-        
-        // Устанавливаем статус и победителя
-        if (status == GameStatus.Win)
-        {
-            state.SetStatus(status, currentPlayer);  // Победитель = текущий игрок
-        }
-        else
-        {
-            state.SetStatus(status);
-        }
+            // Записываем ход в историю
+            state.History.AddMove(targetCell, currentPlayer);
 
-        if (status == GameStatus.InProgress)
-        {
-            state.SwitchPlayer();
-        }
-        else
-        {
-            _gameEvents.OnGameFinished(state);
-        }
+            var status = _ruleSet.Evaluate(board, currentPlayer, targetCell);
 
-        _boardRepository.Save(state);
-        _gameEvents.OnMoveMade(state, targetCell);
-        
-        return Result.Success();
-    }
+            // Устанавливаем статус и победителя
+            if (status == GameStatus.Win)
+            {
+                state.SetStatus(status, currentPlayer);  // Победитель = текущий игрок
+            }
+            else
+            {
+                state.SetStatus(status);
+            }
+
+            if (status == GameStatus.InProgress)
+            {
+                state.SwitchPlayer();
+            }
+            else
+            {
+                _gameEvents.OnGameFinished(state);
+            }
+
+            _boardRepository.Save(state);
+            _gameEvents.OnMoveMade(state, targetCell);
+
+            return Result.Success();
+        }
     }
 }

@@ -7,9 +7,6 @@ using DG.Tweening;
 
 namespace TicTacRog.Presentation.Views
 {
-    /// <summary>
-    /// View клетки игрового поля с DOTween анимациями
-    /// </summary>
     public sealed class CellView : MonoBehaviour, IAnimatable
     {
         [Header("Components")]
@@ -37,7 +34,6 @@ namespace TicTacRog.Presentation.Views
 
         private void Awake()
         {
-            // Убиваем все анимации при уничтожении
             DOTween.Init();
         }
 
@@ -47,7 +43,6 @@ namespace TicTacRog.Presentation.Views
             _onClicked = onClicked;
             _button.onClick.AddListener(HandleClick);
             
-            // Начальное состояние
             if (_canvasGroup != null)
             {
                 _canvasGroup.alpha = 1f;
@@ -60,32 +55,21 @@ namespace TicTacRog.Presentation.Views
             }
         }
 
-        /// <summary>
-        /// Устанавливает метку мгновенно (без анимации)
-        /// </summary>
         public void SetMarkImmediate(Mark mark)
         {
-            // Убиваем ВСЕ анимации на этой клетке
             KillAllAnimations();
             
             _currentMark = mark;
             UpdateLabel();
             
-            // Сбрасываем в нормальное состояние
             ResetToNormalState();
         }
         
-        /// <summary>
-        /// Останавливает текущую анимацию (вызывается извне)
-        /// </summary>
         public void StopCurrentAnimation()
         {
             KillAllAnimations();
         }
         
-        /// <summary>
-        /// Останавливает все анимации на клетке
-        /// </summary>
         private void KillAllAnimations()
         {
             _currentAnimation?.Kill();
@@ -94,21 +78,15 @@ namespace TicTacRog.Presentation.Views
             if (_background != null) _background.DOKill();
         }
         
-        /// <summary>
-        /// Возвращает клетку в нормальное визуальное состояние
-        /// </summary>
         private void ResetToNormalState()
         {
-            // Нормальный размер
             transform.localScale = Vector3.one;
             
-            // Нормальный цвет фона
             if (_background != null)
             {
                 _background.color = _normalColor;
             }
             
-            // Видимый текст
             if (_label != null)
             {
                 var color = _label.color;
@@ -116,47 +94,35 @@ namespace TicTacRog.Presentation.Views
                 _label.color = color;
             }
             
-            // Полная видимость
             if (_canvasGroup != null)
             {
                 _canvasGroup.alpha = 1f;
             }
         }
 
-        /// <summary>
-        /// Устанавливает метку (сама анимация в PlayAnimation)
-        /// </summary>
         public void SetMark(Mark mark)
         {
             _currentMark = mark;
             UpdateLabel();
         }
 
-        /// <summary>
-        /// Проигрывает анимацию появления метки с DOTween
-        /// </summary>
         public IEnumerator PlayAnimation()
         {
-            // Убиваем предыдущую анимацию
             _currentAnimation?.Kill();
 
-            // Создаем последовательность анимаций
             _currentAnimation = DOTween.Sequence();
 
-            // 1. Появление текста (scale + fade)
             transform.localScale = Vector3.zero;
             _currentAnimation.Append(
                 transform.DOScale(_punchScale, _animationDuration * 0.6f)
                     .SetEase(_scaleEase)
             );
             
-            // 2. Небольшой отскок
             _currentAnimation.Append(
                 transform.DOScale(1f, _animationDuration * 0.4f)
                     .SetEase(Ease.OutQuad)
             );
 
-            // 3. Fade in текста (параллельно)
             if (_label != null)
             {
                 var color = _label.color;
@@ -169,7 +135,6 @@ namespace TicTacRog.Presentation.Views
                 );
             }
 
-            // 4. Highlight эффект (опционально)
             if (_background != null)
             {
                 _currentAnimation.Insert(0,
@@ -182,20 +147,15 @@ namespace TicTacRog.Presentation.Views
                 );
             }
 
-            // Ждем завершения
             yield return _currentAnimation.WaitForCompletion();
         }
 
-        /// <summary>
-        /// Анимация подсветки (для победной линии)
-        /// </summary>
         public IEnumerator PlayWinHighlight()
         {
             if (_background == null) yield break;
 
             var sequence = DOTween.Sequence();
             
-            // Пульсация
             for (int i = 0; i < 3; i++)
             {
                 sequence.Append(_background.DOColor(_highlightColor, 0.3f));
@@ -205,15 +165,10 @@ namespace TicTacRog.Presentation.Views
             yield return sequence.WaitForCompletion();
         }
 
-        /// <summary>
-        /// Анимация ошибки (клик на занятую клетку)
-        /// </summary>
         public void PlayErrorShake()
         {
-            // Убиваем предыдущую shake анимацию (иначе наслаиваются)
-            transform.DOKill(complete: true); // complete: true вернет на место автоматически
+            transform.DOKill(complete: true);
             
-            // Shake с автоматическим возвратом (fadeOut делает плавное затухание)
             transform.DOShakePosition(0.3f, strength: 10f, vibrato: 10, randomness: 90, snapping: false, fadeOut: true)
                 .SetEase(Ease.OutQuad);
         }
@@ -232,7 +187,6 @@ namespace TicTacRog.Presentation.Views
 
         private void OnDestroy()
         {
-            // Очищаем анимации
             _currentAnimation?.Kill();
             transform.DOKill();
             if (_label != null) _label.DOKill();

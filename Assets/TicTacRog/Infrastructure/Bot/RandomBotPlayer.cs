@@ -1,17 +1,14 @@
 using System;
+using System.Linq;
 using TicTacRog.Core.Domain;
 using TicTacRog.Core.UseCases;
 
 namespace TicTacRog.Infrastructure.Bot
 {
-    /// <summary>
-    /// Бот, который делает случайный ход среди доступных клеток.
-    /// </summary>
     public sealed class RandomBotPlayer : IBotPlayer
     {
         private readonly IBoardRepository _repository;
         private readonly MakeMoveUseCase _makeMoveUseCase;
-        private readonly Random _random = new Random();
 
         public RandomBotPlayer(
             IBoardRepository repository,
@@ -26,7 +23,7 @@ namespace TicTacRog.Infrastructure.Bot
             if (state.Status != GameStatus.InProgress)
                 return false;
 
-            if (state.CurrentPlayer != Mark.Nought) // бот играет ноликами
+            if (state.CurrentPlayer != Mark.Nought)
                 return false;
 
             var board = state.Board;
@@ -43,9 +40,26 @@ namespace TicTacRog.Infrastructure.Bot
             if (empty.Count == 0)
                 return false;
 
-            var choice = empty[_random.Next(empty.Count)];
+            int seed = CalculateSeedFromHistory(state.History);
+            var random = new Random(seed);
+            var choice = empty[random.Next(empty.Count)];
             var result = _makeMoveUseCase.Execute(choice);
             return result.IsSuccess;
+        }
+
+        private int CalculateSeedFromHistory(MoveHistory history)
+        {
+            if (history.Count == 0)
+                return 0;
+
+            int hash = 17;
+            foreach (var move in history.Moves)
+            {
+                hash = hash * 31 + move.Cell.Row;
+                hash = hash * 31 + move.Cell.Column;
+                hash = hash * 31 + (int)move.Player;
+            }
+            return hash;
         }
     }
 }
