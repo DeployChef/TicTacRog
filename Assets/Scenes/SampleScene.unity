@@ -212,12 +212,12 @@ MonoBehaviour:
     TypeName: 
   autoRun: 1
   autoInjectGameObjects: []
-  _boardView: {fileID: 1659349147}
-  _statusView: {fileID: 579536749}
-  _animationQueue: {fileID: 1522893921}
-  _boardSize: 3
-  _startingPlayer: 1
-  _botThinkDelay: 0.5
+  boardView: {fileID: 1659349147}
+  statusView: {fileID: 579536749}
+  animationQueue: {fileID: 1522893921}
+  boardSize: 3
+  startingPlayer: 1
+  botThinkDelay: 0.5
 --- !u!4 &187975260
 Transform:
   m_ObjectHideFlags: 0
@@ -560,8 +560,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c223dcdea2880a342b7ab4b23185e920, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TicTacRog.Presentation.Views.StatusView
-  _statusText: {fileID: 1153428973}
-  _resetButton: {fileID: 1064449643}
+  statusText: {fileID: 1153428973}
+  resetButton: {fileID: 1064449643}
 --- !u!114 &579536750
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1180,8 +1180,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e904e8b39c8f2543946acf5f9fa21f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TicTacRog.Presentation.Views.BoardView
-  _cellsRoot: {fileID: 90960430}
-  _cellPrefab: {fileID: 7015039352655714664, guid: 95cd4c82152aaa341a2b6513ef7658ec, type: 3}
+  cellsRoot: {fileID: 90960430}
+  cellPrefab: {fileID: 7015039352655714664, guid: 95cd4c82152aaa341a2b6513ef7658ec, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

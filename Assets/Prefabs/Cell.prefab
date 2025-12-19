@@ -271,15 +271,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b22bedfb99b18ea4c8d08331086605cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TicTacRog.Presentation.Views.CellView
-  _button: {fileID: 4873187818676283530}
-  _label: {fileID: 8065222171678976262}
-  _canvasGroup: {fileID: 1596523470655088820}
-  _background: {fileID: 8392828273320507223}
-  _animationDuration: 0.4
-  _scaleEase: 27
-  _punchScale: 1.15
-  _normalColor: {r: 1, g: 1, b: 1, a: 1}
-  _highlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  button: {fileID: 4873187818676283530}
+  label: {fileID: 8065222171678976262}
+  canvasGroup: {fileID: 1596523470655088820}
+  background: {fileID: 8392828273320507223}
+  animationDuration: 0.4
+  scaleEase: 27
+  punchScale: 1.15
+  normalColor: {r: 1, g: 1, b: 1, a: 1}
+  highlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!225 &1596523470655088820
 CanvasGroup:
   m_ObjectHideFlags: 0
