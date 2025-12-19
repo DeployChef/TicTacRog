@@ -7,11 +7,6 @@ using TicTacRog.Presentation.Animation;
 
 namespace TicTacRog.Presentation.StateMachine
 {
-    /// <summary>
-    /// State Machine для управления игровым потоком UI
-    /// Отвечает ТОЛЬКО за состояния: WaitingForPlayer, AnimatingMove, BotThinking, GameFinished
-    /// НЕ управляет ботом напрямую - это делает BotController
-    /// </summary>
     public sealed class GameFlowStateMachine : IDisposable
     {
         private readonly IBoardRepository _repository;
@@ -25,14 +20,8 @@ namespace TicTacRog.Presentation.StateMachine
         public GameFlowState CurrentState => _currentState;
         public GameFlowState PreviousState => _previousState;
         
-        /// <summary>
-        /// Событие изменения состояния (newState, oldState)
-        /// </summary>
         public event Action<GameFlowState, GameFlowState> OnStateChanged;
         
-        /// <summary>
-        /// События входа в конкретные состояния
-        /// </summary>
         public event Action OnEnteredWaitingForPlayer;
         public event Action OnEnteredBotThinking;
         public event Action OnEnteredGameFinished;
@@ -56,17 +45,11 @@ namespace TicTacRog.Presentation.StateMachine
             _animationQueue.OnQueueCompleted -= OnAnimationCompleted;
         }
 
-        /// <summary>
-        /// Можно ли сейчас делать ход игроку
-        /// </summary>
         public bool CanPlayerMove()
         {
             return _currentState == GameFlowState.WaitingForPlayerInput;
         }
 
-        /// <summary>
-        /// Игрок сделал ход
-        /// </summary>
         public void OnPlayerMoved()
         {
             if (_currentState != GameFlowState.WaitingForPlayerInput)
@@ -78,20 +61,13 @@ namespace TicTacRog.Presentation.StateMachine
             TransitionTo(GameFlowState.AnimatingPlayerMove);
         }
 
-        /// <summary>
-        /// Новая игра началась
-        /// </summary>
         public void OnGameStarted()
         {
             TransitionTo(GameFlowState.WaitingForPlayerInput);
         }
 
-        /// <summary>
-        /// Игра завершена
-        /// </summary>
         public void OnGameFinished()
         {
-            // Защита от повторного вызова
             if (_currentState == GameFlowState.GameFinished)
             {
                 Log("OnGameFinished called but already in GameFinished state");
@@ -101,20 +77,14 @@ namespace TicTacRog.Presentation.StateMachine
             TransitionTo(GameFlowState.GameFinished);
         }
 
-        /// <summary>
-        /// Вызывается когда очередь анимаций завершена
-        /// ВАЖНО: Это означает что ВСЕ анимации в очереди закончились!
-        /// </summary>
         private void OnAnimationCompleted()
         {
             var state = _repository.GetCurrent();
 
             Log($"Animation completed. Game status: {state.Status}, Current flow state: {_currentState}");
 
-            // Игра завершена?
             if (state.Status != GameStatus.InProgress)
             {
-                // Если уже в GameFinished, не пытаться перейти туда снова
                 if (_currentState != GameFlowState.GameFinished)
                 {
                     TransitionTo(GameFlowState.GameFinished);
@@ -126,8 +96,6 @@ namespace TicTacRog.Presentation.StateMachine
                 return;
             }
 
-            // Определяем следующее состояние на основе ТЕКУЩЕГО состояния
-            // Когда очередь завершена, мы знаем что анимация для текущего состояния закончилась
             switch (_currentState)
             {
                 case GameFlowState.AnimatingPlayerMove:
@@ -135,8 +103,6 @@ namespace TicTacRog.Presentation.StateMachine
                     break;
                 
                 case GameFlowState.BotThinking:
-                    // Бот сделал ход и анимация ЗАКОНЧИЛАСЬ (OnQueueCompleted)
-                    // Обрабатываем как завершение хода бота
                     Log("BotThinking animation completed → checking next state");
                     HandleBotMoveAnimationCompleted(state);
                     break;
@@ -149,30 +115,24 @@ namespace TicTacRog.Presentation.StateMachine
 
         private void HandlePlayerMoveAnimationCompleted(GameState state)
         {
-            // После анимации хода игрока проверяем, чей ход
             if (state.CurrentPlayer == Mark.Nought)
             {
-                // Ход бота - переходим в состояние BotThinking
-                // BotController услышит это событие и вызовет бота
                 TransitionTo(GameFlowState.BotThinking);
             }
             else
             {
-                // Снова ход игрока (например, в режиме PvP)
                 TransitionTo(GameFlowState.WaitingForPlayerInput);
             }
         }
 
         private void HandleBotMoveAnimationCompleted(GameState state)
         {
-            // После анимации хода бота → ход игрока
             if (state.CurrentPlayer == Mark.Cross)
             {
                 TransitionTo(GameFlowState.WaitingForPlayerInput);
             }
             else
             {
-                // Если вдруг опять ход бота (в режиме Bot vs Bot)
                 TransitionTo(GameFlowState.BotThinking);
             }
         }
@@ -190,10 +150,8 @@ namespace TicTacRog.Presentation.StateMachine
 
             Log($"[STATE] {_previousState} → {_currentState}");
             
-            // Вызываем общее событие
             OnStateChanged?.Invoke(_currentState, _previousState);
 
-            // Вызываем специфичные события
             InvokeStateSpecificEvent(newState);
         }
 

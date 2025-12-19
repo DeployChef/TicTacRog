@@ -1,14 +1,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 using TicTacRog.Core.Domain;
-using TicTacRog.Infrastructure.Repositories;
+using TicTacRog.Core.UseCases;
 using TicTacRog.Presentation.Views;
 
 namespace TicTacRog.Presentation.Presenters
 {
-    /// <summary>
-    /// Отвечает за построение игровой доски из префабов
-    /// </summary>
     public sealed class BoardBuilder
     {
         private readonly BoardView _boardView;
@@ -40,7 +37,7 @@ namespace TicTacRog.Presentation.Presenters
                 return;
             }
             
-            if (_boardView.CellPrefab == null)
+            if (!_boardView.CellPrefab)
             {
                 Debug.LogError("[BoardBuilder] Cannot build board: Cell Prefab is not assigned! " +
                     "Please assign Cell prefab to BoardView in Inspector.");
@@ -58,7 +55,7 @@ namespace TicTacRog.Presentation.Presenters
                     var go = Object.Instantiate(_boardView.CellPrefab, _boardView.CellsRoot);
                     var view = go.GetComponent<CellView>();
                     
-                    if (view == null)
+                    if (!view)
                     {
                         Debug.LogError($"[BoardBuilder] CellView component not found on prefab!");
                         Object.Destroy(go);

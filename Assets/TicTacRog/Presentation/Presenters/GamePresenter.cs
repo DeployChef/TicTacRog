@@ -12,10 +12,6 @@ using TicTacRog.Presentation.StateMachine;
 
 namespace TicTacRog.Presentation.Presenters
 {
-    /// <summary>
-    /// Презентер игры с State Machine и очередью анимаций
-    /// ФИНАЛЬНАЯ ВЕРСИЯ для продакшна
-    /// </summary>
     public sealed class GamePresenter : IDisposable
     {
         private readonly BoardView _boardView;
@@ -61,29 +57,23 @@ namespace TicTacRog.Presentation.Presenters
         {
             _boardBuilder.BuildBoard(OnCellClicked);
 
-            // Подписываемся на доменные события
             _startedSub = _bus.Subscribe<GameStartedMessage>(OnGameStarted);
             _movedSub = _bus.Subscribe<MoveMadeMessage>(OnMoveMade);
             _finishedSub = _bus.Subscribe<GameFinishedMessage>(OnGameFinished);
 
-            // Подписываемся на изменения состояния State Machine
             _stateMachine.OnStateChanged += OnStateChanged;
             _stateMachine.OnEnteredWaitingForPlayer += OnEnteredWaitingForPlayer;
             _stateMachine.OnEnteredBotThinking += OnEnteredBotThinking;
             _stateMachine.OnEnteredGameFinished += OnEnteredGameFinished;
 
-            // Подписываемся на события анимаций
             _animationQueue.OnEventStarted += OnAnimationStarted;
             _animationQueue.OnEventCompleted += OnAnimationCompleted;
 
             _stateMachine.Initialize();
 
             _statusView.ResetButton.onClick.AddListener(OnResetClicked);
-            
-            // Кнопка Reset всегда доступна!
             _statusView.ResetButton.interactable = true;
             
-            // Перерисовываем доску только если состояние уже создано
             var currentState = _repository.GetCurrent();
             if (currentState != null)
             {
@@ -120,10 +110,6 @@ namespace TicTacRog.Presentation.Presenters
         {
             var currentState = _stateMachine.CurrentState;
             
-            // Разрешаем Reset только когда:
-            // 1. Ждем хода игрока (WaitingForPlayerInput)
-            // 2. Игра закончена (GameFinished)
-            // Блокируем во время анимаций и хода бота
             if (currentState != GameFlowState.WaitingForPlayerInput && 
                 currentState != GameFlowState.GameFinished)
             {
@@ -133,16 +119,13 @@ namespace TicTacRog.Presentation.Presenters
             
             Debug.Log("[GamePresenter] Reset button clicked");
             
-            // 1. Останавливаем все анимации
             _animationQueue.Clear();
             
-            // 2. Принудительно сбрасываем все клетки (на случай если анимация не успела остановиться)
             foreach (var cellView in _boardBuilder.CellViews.Values)
             {
                 cellView.SetMarkImmediate(Mark.None);
             }
             
-            // 3. Запускаем новую игру
             var size = _repository.GetCurrent().Board.Size;
             var result = _startNewGame.Execute(size, Mark.Cross);
             if (!result.IsSuccess)
@@ -153,7 +136,6 @@ namespace TicTacRog.Presentation.Presenters
 
         private void OnCellClicked(CellIndex index)
         {
-            // Проверяем через State Machine
             if (!_stateMachine.CanPlayerMove())
             {
                 Debug.Log($"Cannot move: current state is {_stateMachine.CurrentState}");
@@ -162,17 +144,14 @@ namespace TicTacRog.Presentation.Presenters
             
             var state = _repository.GetCurrent();
             
-            // Проверяем что сейчас ход игрока
             if (state.CurrentPlayer != Mark.Cross)
             {
                 Debug.Log("Not player's turn");
                 return;
             }
 
-            // Проверяем что клетка пустая
             if (!state.Board.IsEmpty(index))
             {
-                // Анимация ошибки
                 if (_boardBuilder.CellViews.TryGetValue(index, out var cellView))
                 {
                     cellView.PlayErrorShake();
@@ -180,7 +159,6 @@ namespace TicTacRog.Presentation.Presenters
                 return;
             }
             
-            // Домен просчитывает мгновенно
             var result = _makeMove.Execute(index);
             
             if (!result.IsSuccess)
@@ -189,7 +167,6 @@ namespace TicTacRog.Presentation.Presenters
                 return;
             }
             
-            // Уведомляем State Machine
             _stateMachine.OnPlayerMoved();
         }
 
@@ -210,7 +187,6 @@ namespace TicTacRog.Presentation.Presenters
         {
             Debug.Log($"[Presenter] Move made at {msg.LastMove.Row},{msg.LastMove.Column}");
             
-            // Добавляем анимацию в очередь
             if (_boardBuilder.CellViews.TryGetValue(msg.LastMove, out var cellView))
             {
                 var mark = msg.State.Board.GetMark(msg.LastMove);
@@ -229,9 +205,6 @@ namespace TicTacRog.Presentation.Presenters
 
         #region State Machine Events
 
-        /// <summary>
-        /// Вызывается при любом изменении состояния
-        /// </summary>
         private void OnStateChanged(GameFlowState newState, GameFlowState oldState)
         {
             Debug.Log($"[Presenter] State changed: {oldState} → {newState}");
@@ -254,14 +227,14 @@ namespace TicTacRog.Presentation.Presenters
         {
             Debug.Log("[Presenter] Game finished");
             
-            // Блокируем клетки, но НЕ блокируем кнопку Reset
             SetCellsInteractionEnabled(false);
-            
-            // Кнопка Reset остается доступной!
             _statusView.ResetButton.interactable = true;
             
-            // Можно добавить анимацию победы
-            // PlayVictoryAnimation();
+            var state = _repository.GetCurrent();
+            if (state.Status == GameStatus.Win)
+            {
+                PlayWinHighlight(state);
+            }
         }
 
         #endregion
@@ -271,14 +244,12 @@ namespace TicTacRog.Presentation.Presenters
         private void OnAnimationStarted(IAnimationEvent evt)
         {
             Debug.Log($"[Presenter] Animation started: {evt.GetType().Name}");
-            // Можно добавить звуки
         }
 
         private void OnAnimationCompleted(IAnimationEvent evt)
         {
             Debug.Log($"[Presenter] Animation completed: {evt.GetType().Name}");
             
-            // Обновляем статус после каждой анимации
             var state = _repository.GetCurrent();
             UpdateStatusText(state, _stateMachine.CurrentState);
         }
@@ -295,6 +266,112 @@ namespace TicTacRog.Presentation.Presenters
 
         #endregion
 
+        #region Win Animation
+
+        private void PlayWinHighlight(GameState state)
+        {
+            var winningCells = GetWinningCells(state);
+            
+            foreach (var cellIndex in winningCells)
+            {
+                if (_boardBuilder.CellViews.TryGetValue(cellIndex, out var cellView))
+                {
+                    var winEvent = new WinHighlightAnimationEvent(cellView);
+                    _animationQueue.Enqueue(winEvent);
+                }
+            }
+        }
+
+        private List<CellIndex> GetWinningCells(GameState state)
+        {
+            var winningCells = new List<CellIndex>();
+            var board = state.Board;
+            var winner = state.Winner;
+            var size = board.Size;
+
+            for (int row = 0; row < size; row++)
+            {
+                bool rowWin = true;
+                for (int col = 0; col < size; col++)
+                {
+                    if (board.GetMark(new CellIndex(row, col)) != winner)
+                    {
+                        rowWin = false;
+                        break;
+                    }
+                }
+                if (rowWin)
+                {
+                    for (int col = 0; col < size; col++)
+                    {
+                        winningCells.Add(new CellIndex(row, col));
+                    }
+                    return winningCells;
+                }
+            }
+
+            for (int col = 0; col < size; col++)
+            {
+                bool colWin = true;
+                for (int row = 0; row < size; row++)
+                {
+                    if (board.GetMark(new CellIndex(row, col)) != winner)
+                    {
+                        colWin = false;
+                        break;
+                    }
+                }
+                if (colWin)
+                {
+                    for (int row = 0; row < size; row++)
+                    {
+                        winningCells.Add(new CellIndex(row, col));
+                    }
+                    return winningCells;
+                }
+            }
+
+            bool mainDiagWin = true;
+            for (int i = 0; i < size; i++)
+            {
+                if (board.GetMark(new CellIndex(i, i)) != winner)
+                {
+                    mainDiagWin = false;
+                    break;
+                }
+            }
+            if (mainDiagWin)
+            {
+                for (int i = 0; i < size; i++)
+                {
+                    winningCells.Add(new CellIndex(i, i));
+                }
+                return winningCells;
+            }
+
+            bool antiDiagWin = true;
+            for (int i = 0; i < size; i++)
+            {
+                if (board.GetMark(new CellIndex(i, size - 1 - i)) != winner)
+                {
+                    antiDiagWin = false;
+                    break;
+                }
+            }
+            if (antiDiagWin)
+            {
+                for (int i = 0; i < size; i++)
+                {
+                    winningCells.Add(new CellIndex(i, size - 1 - i));
+                }
+                return winningCells;
+            }
+
+            return winningCells;
+        }
+
+        #endregion
+
         #region UI Updates
 
         private void UpdateUI(GameFlowState flowState)
@@ -303,10 +380,6 @@ namespace TicTacRog.Presentation.Presenters
             UpdateStatusText(state, flowState);
         }
 
-        /// <summary>
-        /// Блокирует/разблокирует клетки игрового поля
-        /// Кнопка Reset остается доступной!
-        /// </summary>
         private void SetCellsInteractionEnabled(bool enabled)
         {
             foreach (var cellView in _boardBuilder.CellViews.Values)

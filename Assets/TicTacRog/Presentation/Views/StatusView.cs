@@ -6,10 +6,10 @@ namespace TicTacRog.Presentation.Views
 {
     public sealed class StatusView : MonoBehaviour
     {
-        [SerializeField] private TextMeshProUGUI _statusText;
-        [SerializeField] private Button _resetButton;
+        [SerializeField] private TextMeshProUGUI statusText;
+        [SerializeField] private Button resetButton;
 
-        public TextMeshProUGUI StatusText => _statusText;
-        public Button ResetButton => _resetButton;
+        public TextMeshProUGUI StatusText => statusText;
+        public Button ResetButton => resetButton;
     }
 }

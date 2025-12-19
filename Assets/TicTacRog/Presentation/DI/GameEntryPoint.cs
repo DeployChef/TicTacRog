@@ -8,10 +8,6 @@ using DG.Tweening;
 
 namespace TicTacRog.Presentation.DI
 {
-    /// <summary>
-    /// Точка входа в приложение
-    /// Инициализирует игру через DI контейнер
-    /// </summary>
     public sealed class GameEntryPoint : IStartable
     {
         private readonly int _boardSize;
@@ -38,13 +34,8 @@ namespace TicTacRog.Presentation.DI
         {
             Debug.Log($"[GameEntryPoint] Starting game: {_boardSize}x{_boardSize}, Starting player: {_startingPlayer}");
             
-            // Инициализируем DOTween глобально один раз
-            InitializeDOTween();
+            InitializeDoTween();
             
-            // ВАЖНО: Сначала создаем игру, ПОТОМ инициализируем презентер!
-            // Иначе презентер попытается прочитать несуществующее состояние
-            
-            // 1. Создаем новую игру (создает Board и GameState)
             var result = _startNewGame.Execute(_boardSize, _startingPlayer);
             
             if (!result.IsSuccess)
@@ -53,24 +44,16 @@ namespace TicTacRog.Presentation.DI
                 return;
             }
             
-            // 2. Инициализируем презентер (подписывается на события, строит UI)
             _gamePresenter.Initialize();
-            
-            // 3. Инициализируем контроллер бота (подписывается на State Machine)
             _botController.Initialize();
             
             Debug.Log("[GameEntryPoint] Game started successfully!");
         }
 
-        private static void InitializeDOTween()
+        private static void InitializeDoTween()
         {
-            // Инициализируем DOTween один раз при старте приложения
-            // Это безопасно вызывать несколько раз, но лучше один раз
-            if (!DOTween.isInitialized)
-            {
-                DOTween.Init();
-                Debug.Log("[GameEntryPoint] DOTween initialized");
-            }
+            DOTween.Init();
+            Debug.Log("[GameEntryPoint] DOTween initialized");
         }
     }
 }

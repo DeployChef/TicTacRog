@@ -5,9 +5,6 @@ using TicTacRog.Presentation.Views;
 
 namespace TicTacRog.Presentation.Animation
 {
-    /// <summary>
-    /// Событие анимации хода
-    /// </summary>
     public sealed class MoveAnimationEvent : IAnimationEvent
     {
         private readonly CellView _cellView;
@@ -26,16 +23,12 @@ namespace TicTacRog.Presentation.Animation
 
         public IEnumerator PlayAnimation()
         {
-            // Устанавливаем метку
             _cellView.SetMark(_mark);
-            
-            // Проигрываем анимацию
             yield return _cellView.PlayAnimation();
         }
         
         public void StopAnimation()
         {
-            // Останавливаем анимацию в CellView
             _cellView.StopCurrentAnimation();
         }
     }

@@ -1,8 +1,5 @@
 namespace TicTacRog.Presentation.Views
 {
-    /// <summary>
-    /// Константы для текстовых меток игры
-    /// </summary>
     public static class GameTextConstants
     {
         public const string MarkCross = "X";

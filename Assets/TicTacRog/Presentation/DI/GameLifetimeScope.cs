@@ -9,105 +9,85 @@ using TicTacRog.Presentation.Views;
 using TicTacRog.Presentation.Animation;
 using TicTacRog.Presentation.StateMachine;
 using UnityEngine;
+using UnityEngine.Serialization;
 using VContainer;
 using VContainer.Unity;
 
 namespace TicTacRog.Presentation.DI
 {
-    /// <summary>
-    /// DI контейнер для композиции всех зависимостей игры
-    /// ФИНАЛЬНАЯ ВЕРСИЯ с State Machine + Animation Queue
-    /// </summary>
     public sealed class GameLifetimeScope : LifetimeScope
     {
         [Header("Views")]
-        [SerializeField] private BoardView _boardView;
-        [SerializeField] private StatusView _statusView;
-        [SerializeField] private AnimationQueue _animationQueue;
+        [SerializeField] private BoardView boardView;
+        [SerializeField] private StatusView statusView;
+        [SerializeField] private AnimationQueue animationQueue;
 
         [Header("Game Settings")]
-        [SerializeField] private int _boardSize = 3;
-        [SerializeField] private Mark _startingPlayer = Mark.Cross;
+        [SerializeField] private int boardSize = 3;
+        [SerializeField] private Mark startingPlayer = Mark.Cross;
 
         [Header("Bot Settings")]
-        [SerializeField] private float _botThinkDelay = 0.5f;
+        [SerializeField] private float botThinkDelay = 0.5f;
 
         protected override void Configure(IContainerBuilder builder)
         {
-            // Валидация (проверяем что все поля заполнены)
             ValidateFields();
             
-            // Views (как экземпляры из сцены)
-            builder.RegisterInstance(_boardView);
-            builder.RegisterInstance(_statusView);
-            builder.RegisterInstance(_animationQueue);
-            
-            // AnimationQueue это MonoBehaviour - регистрируем его также как MonoBehaviour
-            // для использования в GameFlowStateMachine (для корутин)
-            builder.RegisterInstance<MonoBehaviour>(_animationQueue);
+            builder.RegisterInstance(boardView);
+            builder.RegisterInstance(statusView);
+            builder.RegisterInstance(animationQueue);
+            builder.RegisterInstance<MonoBehaviour>(animationQueue);
 
-            // Domain (бизнес-логика)
             builder.Register<InMemoryBoardRepository>(Lifetime.Singleton)
                 .As<IBoardRepository>();
             
-            builder.Register<Classic3x3RuleSet>(Lifetime.Singleton)
+            builder.Register<Classic3X3RuleSet>(Lifetime.Singleton)
                 .As<IGameRuleSet>();
 
-            // Infrastructure (события и реализации)
             builder.Register<MessageBus>(Lifetime.Singleton)
                 .As<IMessageBus>();
             
             builder.Register<GameEventsAdapter>(Lifetime.Singleton)
                 .As<IGameEvents>();
 
-            // Bot
             builder.Register<RandomBotPlayer>(Lifetime.Singleton)
                 .As<IBotPlayer>();
 
-            // Use Cases
             builder.Register<StartNewGameUseCase>(Lifetime.Singleton);
             builder.Register<MakeMoveUseCase>(Lifetime.Singleton);
 
-            // State Machine (управляет состояниями UI)
             builder.Register<GameFlowStateMachine>(Lifetime.Singleton);
 
-            // Bot Controller (управляет ходами бота)
             builder.Register<BotController>(Lifetime.Singleton)
-                .WithParameter("botThinkDelay", _botThinkDelay);
+                .WithParameter("botThinkDelay", botThinkDelay);
 
-            // Presenter helpers
             builder.Register<BoardBuilder>(Lifetime.Singleton);
             builder.Register<StatusTextFormatter>(Lifetime.Singleton);
 
-            // Presenter
             builder.Register<GamePresenter>(Lifetime.Singleton);
 
-            // Entry Point
             builder.RegisterEntryPoint<GameEntryPoint>()
-                .WithParameter("boardSize", _boardSize)
-                .WithParameter("startingPlayer", _startingPlayer);
+                .WithParameter("boardSize", boardSize)
+                .WithParameter("startingPlayer", startingPlayer);
         }
         
-        /// <summary>
-        /// Проверяем что все обязательные поля заполнены в Inspector
-        /// </summary>
         private void ValidateFields()
         {
-            if (_boardView == null)
+            if (!boardView)
             {
                 Debug.LogError("[GameLifetimeScope] BoardView is not assigned! " +
                     "Please drag BoardView from scene to the field in Inspector.");
                 throw new System.NullReferenceException("BoardView is null");
             }
             
-            if (_statusView == null)
+            if (!statusView)
             {
                 Debug.LogError("[GameLifetimeScope] StatusView is not assigned! " +
                     "Please drag StatusView from scene to the field in Inspector.");
                 throw new System.NullReferenceException("StatusView is null");
             }
             
-            if (_animationQueue == null)
+            if (!animationQueue)
             {
                 Debug.LogError("[GameLifetimeScope] AnimationQueue is not assigned! " +
                     "Please drag AnimationQueue GameObject to the field in Inspector.");

@@ -4,14 +4,10 @@ using TicTacRog.Presentation.Views;
 
 namespace TicTacRog.Presentation.Presenters
 {
-    /// <summary>
-    /// Форматирует текст статуса игры на основе состояния игры и State Machine
-    /// </summary>
     public sealed class StatusTextFormatter
     {
         public string GetStatusText(GameState state, GameFlowState flowState)
         {
-            // Если игра закончена
             if (state.Status != GameStatus.InProgress)
             {
                 return state.Status switch
@@ -22,7 +18,6 @@ namespace TicTacRog.Presentation.Presenters
                 };
             }
 
-            // Игра в процессе - показываем состояние
             return flowState switch
             {
                 GameFlowState.WaitingForPlayerInput => GameTextConstants.StatusYourTurn,

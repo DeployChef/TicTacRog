@@ -4,10 +4,10 @@ namespace TicTacRog.Presentation.Views
 {
     public sealed class BoardView : MonoBehaviour
     {
-        [SerializeField] private Transform _cellsRoot;
-        [SerializeField] private GameObject _cellPrefab;
+        [SerializeField] private Transform cellsRoot;
+        [SerializeField] private GameObject cellPrefab;
 
-        public Transform CellsRoot => _cellsRoot;
-        public GameObject CellPrefab => _cellPrefab;
+        public Transform CellsRoot => cellsRoot;
+        public GameObject CellPrefab => cellPrefab;
     }
 }
