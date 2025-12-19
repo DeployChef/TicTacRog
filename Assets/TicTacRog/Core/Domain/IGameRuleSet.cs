@@ -4,7 +4,7 @@ namespace TicTacRog.Core.Domain
 {
     public interface IGameRuleSet
     {
-        GameStatus Evaluate(Board board, Mark lastMark, CellIndex lastMove);
-        IReadOnlyList<CellIndex> GetWinningCells(Board board, Mark winner);
+        GameStatus Evaluate(Board board, SymbolType lastSymbolType, CellIndex lastMove);
+        IReadOnlyList<CellIndex> GetWinningCells(Board board, SymbolType winnerType);
     }
 }

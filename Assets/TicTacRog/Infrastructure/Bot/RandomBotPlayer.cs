@@ -2,6 +2,8 @@ using System;
 using System.Linq;
 using TicTacRog.Core.Domain;
 using TicTacRog.Core.UseCases;
+using UnityEngine;
+using Random = System.Random;
 
 namespace TicTacRog.Infrastructure.Bot
 {
@@ -23,8 +25,16 @@ namespace TicTacRog.Infrastructure.Bot
             if (state.Status != GameStatus.InProgress)
                 return false;
 
-            if (state.CurrentPlayer != Mark.Nought)
+            if (state.CurrentPlayerType != SymbolType.Nought)
                 return false;
+
+            // Проверяем, есть ли символы в руке бота
+            var botHand = state.BotHand;
+            if (botHand.IsEmpty)
+            {
+                Debug.LogWarning("[RandomBotPlayer] Bot hand is empty, cannot make move");
+                return false;
+            }
 
             var board = state.Board;
             var empty = new System.Collections.Generic.List<CellIndex>();
@@ -33,17 +43,20 @@ namespace TicTacRog.Infrastructure.Bot
             for (int y = 0; y < board.Size; y++)
             {
                 var idx = new CellIndex(x, y);
-                if (board.GetMark(idx) == Mark.None)
+                if (board.IsEmpty(idx))
                     empty.Add(idx);
             }
 
             if (empty.Count == 0)
                 return false;
 
+            // Берем первый символ из руки бота (позже можно улучшить логику выбора)
+            var symbol = botHand.Symbols[0];
+
             int seed = CalculateSeedFromHistory(state.History);
             var random = new Random(seed);
             var choice = empty[random.Next(empty.Count)];
-            var result = _makeMoveUseCase.Execute(choice);
+            var result = _makeMoveUseCase.Execute(choice, symbol);
             return result.IsSuccess;
         }
 
@@ -57,7 +70,7 @@ namespace TicTacRog.Infrastructure.Bot
             {
                 hash = hash * 31 + move.Cell.Row;
                 hash = hash * 31 + move.Cell.Column;
-                hash = hash * 31 + (int)move.Player;
+                hash = hash * 31 + (int)move.PlayerType;
             }
             return hash;
         }

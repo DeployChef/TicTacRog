@@ -6,15 +6,15 @@ namespace TicTacRog.Core.Domain
     public readonly struct MoveRecord
     {
         public CellIndex Cell { get; }
-        public Mark Player { get; }
+        public SymbolType PlayerType { get; }
 
-        public MoveRecord(CellIndex cell, Mark player)
+        public MoveRecord(CellIndex cell, SymbolType playerType)
         {
             Cell = cell;
-            Player = player;
+            PlayerType = playerType;
         }
 
-        public override string ToString() => $"{Player} at ({Cell.Row},{Cell.Column})";
+        public override string ToString() => $"{PlayerType} at ({Cell.Row},{Cell.Column})";
     }
 }
 

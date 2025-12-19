@@ -3,12 +3,12 @@
     public readonly struct CellState
     {
         public CellIndex Index { get; }
-        public Mark Mark { get; }
+        public Symbol Symbol { get; }
 
-        public CellState(CellIndex index, Mark mark)
+        public CellState(CellIndex index, Symbol symbol)
         {
             Index = index;
-            Mark = mark;
+            Symbol = symbol;
         }
     }
 }

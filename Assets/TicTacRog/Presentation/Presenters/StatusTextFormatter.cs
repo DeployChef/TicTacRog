@@ -31,12 +31,12 @@ namespace TicTacRog.Presentation.Presenters
 
         private string GetWinText(GameState state)
         {
-            var winner = state.Winner != Mark.None ? state.Winner : state.CurrentPlayer;
+            var winner = state.WinnerType != SymbolType.None ? state.WinnerType : state.CurrentPlayerType;
             
             return winner switch
             {
-                Mark.Cross => GameTextConstants.StatusYouWin,
-                Mark.Nought => GameTextConstants.StatusBotWins,
+                SymbolType.Cross => GameTextConstants.StatusYouWin,
+                SymbolType.Nought => GameTextConstants.StatusBotWins,
                 _ => GameTextConstants.StatusGameOver
             };
         }

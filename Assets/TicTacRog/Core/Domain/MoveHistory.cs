@@ -16,9 +16,9 @@ namespace TicTacRog.Core.Domain
         /// <summary>
         /// Добавляет ход в историю.
         /// </summary>
-        public void AddMove(CellIndex cell, Mark player)
+        public void AddMove(CellIndex cell, SymbolType playerType)
         {
-            _moves.Add(new MoveRecord(cell, player));
+            _moves.Add(new MoveRecord(cell, playerType));
         }
 
         /// <summary>
@@ -40,9 +40,9 @@ namespace TicTacRog.Core.Domain
         /// <summary>
         /// Получает все ходы определенного игрока.
         /// </summary>
-        public IEnumerable<MoveRecord> GetMovesByPlayer(Mark player)
+        public IEnumerable<MoveRecord> GetMovesByPlayer(SymbolType playerType)
         {
-            return _moves.Where(m => m.Player == player);
+            return _moves.Where(m => m.PlayerType == playerType);
         }
 
         public override string ToString()

@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace TicTacRog.Core.Domain
 {
     public class Board
     {
         public int Size { get; }
-        private readonly Mark[] _cells;
+        private readonly Symbol[] _cells;
 
         public Board(int size)
         {
@@ -13,27 +14,56 @@ namespace TicTacRog.Core.Domain
                 throw new ArgumentOutOfRangeException(nameof(size));
 
             Size = size;
-            _cells = new Mark[size * size];
+            _cells = new Symbol[size * size];
         }
 
-        public Mark GetMark(CellIndex index)
+        public Symbol GetSymbol(CellIndex index)
         {
             return _cells[ToFlatIndex(index)];
         }
 
-        public void SetMark(CellIndex index, Mark mark)
+        public void SetSymbol(CellIndex index, Symbol symbol)
         {
-            _cells[ToFlatIndex(index)] = mark;
+            _cells[ToFlatIndex(index)] = symbol;
         }
 
         public CellState GetCellState(CellIndex index)
         {
-            return new CellState(index, GetMark(index));
+            return new CellState(index, GetSymbol(index));
         }
 
         public bool IsEmpty(CellIndex index)
         {
-            return GetMark(index) == Mark.None;
+            return GetSymbol(index) == null;
+        }
+
+        /// <summary>
+        /// Получить все символы, размещенные на доске (для возврата в деку после партии).
+        /// </summary>
+        public List<Symbol> GetAllSymbols()
+        {
+            var symbols = new List<Symbol>();
+            for (int i = 0; i < _cells.Length; i++)
+            {
+                if (_cells[i] != null)
+                {
+                    symbols.Add(_cells[i]);
+                }
+            }
+            return symbols;
+        }
+
+        /// <summary>
+        /// Очистить доску и вернуть все символы.
+        /// </summary>
+        public List<Symbol> ClearAndReturnSymbols()
+        {
+            var symbols = GetAllSymbols();
+            for (int i = 0; i < _cells.Length; i++)
+            {
+                _cells[i] = null;
+            }
+            return symbols;
         }
 
         private int ToFlatIndex(CellIndex index)

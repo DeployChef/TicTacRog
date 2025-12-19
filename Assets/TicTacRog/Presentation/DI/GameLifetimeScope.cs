@@ -24,7 +24,7 @@ namespace TicTacRog.Presentation.DI
 
         [Header("Game Settings")]
         [SerializeField] private int boardSize = 3;
-        [SerializeField] private Mark startingPlayer = Mark.Cross;
+        [SerializeField] private SymbolType startingPlayer = SymbolType.Cross;
 
         [Header("Bot Settings")]
         [SerializeField] private float botThinkDelay = 0.5f;
@@ -68,7 +68,7 @@ namespace TicTacRog.Presentation.DI
 
             builder.RegisterEntryPoint<GameEntryPoint>()
                 .WithParameter("boardSize", boardSize)
-                .WithParameter("startingPlayer", startingPlayer);
+                .WithParameter("startingPlayerType", startingPlayer);
         }
         
         private void ValidateFields()

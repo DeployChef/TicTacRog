@@ -3,29 +3,56 @@
     public sealed class GameState
     {
         public Board Board { get; }
-        public Mark CurrentPlayer { get; private set; }
+        public SymbolType CurrentPlayerType { get; private set; }
         public GameStatus Status { get; private set; }
-        public Mark Winner { get; private set; }
+        public SymbolType WinnerType { get; private set; }
         public MoveHistory History { get; }
 
-        public GameState(Board board, Mark startingPlayer)
+        // Деки и руки игроков
+        public Deck PlayerDeck { get; }
+        public Hand PlayerHand { get; }
+        public Deck BotDeck { get; }
+        public Hand BotHand { get; }
+
+        public GameState(Board board, SymbolType startingPlayerType, Deck playerDeck, Hand playerHand, Deck botDeck, Hand botHand)
         {
             Board = board;
-            CurrentPlayer = startingPlayer;
+            CurrentPlayerType = startingPlayerType;
             Status = GameStatus.InProgress;
-            Winner = Mark.None;
+            WinnerType = SymbolType.None;
             History = new MoveHistory();
+            
+            PlayerDeck = playerDeck ?? throw new System.ArgumentNullException(nameof(playerDeck));
+            PlayerHand = playerHand ?? throw new System.ArgumentNullException(nameof(playerHand));
+            BotDeck = botDeck ?? throw new System.ArgumentNullException(nameof(botDeck));
+            BotHand = botHand ?? throw new System.ArgumentNullException(nameof(botHand));
         }
 
-        public void SetStatus(GameStatus status, Mark winner = Mark.None)
+        public void SetStatus(GameStatus status, SymbolType winnerType = SymbolType.None)
         {
             Status = status;
-            Winner = winner;
+            WinnerType = winnerType;
         }
 
         public void SwitchPlayer()
         {
-            CurrentPlayer = CurrentPlayer == Mark.Cross ? Mark.Nought : Mark.Cross;
+            CurrentPlayerType = CurrentPlayerType == SymbolType.Cross ? SymbolType.Nought : SymbolType.Cross;
+        }
+
+        /// <summary>
+        /// Получить текущую деку в зависимости от текущего игрока.
+        /// </summary>
+        public Deck GetCurrentDeck()
+        {
+            return CurrentPlayerType == SymbolType.Cross ? PlayerDeck : BotDeck;
+        }
+
+        /// <summary>
+        /// Получить текущую руку в зависимости от текущего игрока.
+        /// </summary>
+        public Hand GetCurrentHand()
+        {
+            return CurrentPlayerType == SymbolType.Cross ? PlayerHand : BotHand;
         }
     }
 }

@@ -123,11 +123,11 @@ namespace TicTacRog.Presentation.Presenters
             
             foreach (var cellView in _boardBuilder.CellViews.Values)
             {
-                cellView.SetMarkImmediate(Mark.None);
+                cellView.SetSymbolImmediate(null);
             }
             
             var size = _repository.GetCurrent().Board.Size;
-            var result = _startNewGame.Execute(size, Mark.Cross);
+            var result = _startNewGame.Execute(size, SymbolType.Cross);
             if (!result.IsSuccess)
             {
                 Debug.LogError($"[GamePresenter] Failed to start new game: {result.ErrorMessage}");
@@ -144,7 +144,7 @@ namespace TicTacRog.Presentation.Presenters
             
             var state = _repository.GetCurrent();
             
-            if (state.CurrentPlayer != Mark.Cross)
+            if (state.CurrentPlayerType != SymbolType.Cross)
             {
                 Debug.Log("Not player's turn");
                 return;
@@ -159,7 +159,16 @@ namespace TicTacRog.Presentation.Presenters
                 return;
             }
             
-            var result = _makeMove.Execute(index);
+            // Временно берем первый символ из руки (позже будет drag & drop)
+            var playerHand = state.PlayerHand;
+            if (playerHand.IsEmpty)
+            {
+                Debug.LogWarning("[GamePresenter] Player hand is empty, cannot make move");
+                return;
+            }
+            
+            var symbol = playerHand.Symbols[0];
+            var result = _makeMove.Execute(index, symbol);
             
             if (!result.IsSuccess)
             {
@@ -189,8 +198,8 @@ namespace TicTacRog.Presentation.Presenters
             
             if (_boardBuilder.CellViews.TryGetValue(msg.LastMove, out var cellView))
             {
-                var mark = msg.State.Board.GetMark(msg.LastMove);
-                var animEvent = new MoveAnimationEvent(cellView, mark, msg.LastMove);
+                var symbol = msg.State.Board.GetSymbol(msg.LastMove);
+                var animEvent = new MoveAnimationEvent(cellView, symbol, msg.LastMove);
                 _animationQueue.Enqueue(animEvent);
             }
         }

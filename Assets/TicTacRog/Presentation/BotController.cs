@@ -87,7 +87,7 @@ namespace TicTacRog.Presentation
                 yield break;
             }
 
-            if (state.CurrentPlayer != Mark.Nought)
+            if (state.CurrentPlayerType != SymbolType.Nought)
             {
                 Debug.LogWarning("[BotController] Not bot's turn anymore");
                 yield break;

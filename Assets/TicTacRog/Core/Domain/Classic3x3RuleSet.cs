@@ -4,9 +4,9 @@ namespace TicTacRog.Core.Domain
 {
     public sealed class Classic3X3RuleSet : IGameRuleSet
     {
-        public GameStatus Evaluate(Board board, Mark lastMark, CellIndex lastMove)
+        public GameStatus Evaluate(Board board, SymbolType lastSymbolType, CellIndex lastMove)
         {
-            if (lastMark == Mark.None)
+            if (lastSymbolType == SymbolType.None)
                 return GameStatus.InProgress;
 
             var size = board.Size;
@@ -15,7 +15,8 @@ namespace TicTacRog.Core.Domain
             bool rowWin = true;
             for (int col = 0; col < size; col++)
             {
-                if (board.GetMark(new CellIndex(lastMove.Row, col)) != lastMark)
+                var symbol = board.GetSymbol(new CellIndex(lastMove.Row, col));
+                if (symbol == null || symbol.Type != lastSymbolType)
                 {
                     rowWin = false;
                     break;
@@ -29,7 +30,8 @@ namespace TicTacRog.Core.Domain
             bool colWin = true;
             for (int row = 0; row < size; row++)
             {
-                if (board.GetMark(new CellIndex(row, lastMove.Column)) != lastMark)
+                var symbol = board.GetSymbol(new CellIndex(row, lastMove.Column));
+                if (symbol == null || symbol.Type != lastSymbolType)
                 {
                     colWin = false;
                     break;
@@ -45,7 +47,8 @@ namespace TicTacRog.Core.Domain
                 bool diagWin = true;
                 for (int i = 0; i < size; i++)
                 {
-                    if (board.GetMark(new CellIndex(i, i)) != lastMark)
+                    var symbol = board.GetSymbol(new CellIndex(i, i));
+                    if (symbol == null || symbol.Type != lastSymbolType)
                     {
                         diagWin = false;
                         break;
@@ -62,7 +65,8 @@ namespace TicTacRog.Core.Domain
                 bool antiDiagWin = true;
                 for (int i = 0; i < size; i++)
                 {
-                    if (board.GetMark(new CellIndex(i, size - 1 - i)) != lastMark)
+                    var symbol = board.GetSymbol(new CellIndex(i, size - 1 - i));
+                    if (symbol == null || symbol.Type != lastSymbolType)
                     {
                         antiDiagWin = false;
                         break;
@@ -78,7 +82,7 @@ namespace TicTacRog.Core.Domain
             {
                 for (int col = 0; col < size; col++)
                 {
-                    if (board.GetMark(new CellIndex(row, col)) == Mark.None)
+                    if (board.IsEmpty(new CellIndex(row, col)))
                         return GameStatus.InProgress;
                 }
             }
@@ -86,7 +90,7 @@ namespace TicTacRog.Core.Domain
             return GameStatus.Draw;
         }
 
-        public IReadOnlyList<CellIndex> GetWinningCells(Board board, Mark winner)
+        public IReadOnlyList<CellIndex> GetWinningCells(Board board, SymbolType winnerType)
         {
             var winningCells = new List<CellIndex>();
             var size = board.Size;
@@ -96,7 +100,8 @@ namespace TicTacRog.Core.Domain
                 bool rowWin = true;
                 for (int col = 0; col < size; col++)
                 {
-                    if (board.GetMark(new CellIndex(row, col)) != winner)
+                    var symbol = board.GetSymbol(new CellIndex(row, col));
+                    if (symbol == null || symbol.Type != winnerType)
                     {
                         rowWin = false;
                         break;
@@ -117,7 +122,8 @@ namespace TicTacRog.Core.Domain
                 bool colWin = true;
                 for (int row = 0; row < size; row++)
                 {
-                    if (board.GetMark(new CellIndex(row, col)) != winner)
+                    var symbol = board.GetSymbol(new CellIndex(row, col));
+                    if (symbol == null || symbol.Type != winnerType)
                     {
                         colWin = false;
                         break;
@@ -136,7 +142,8 @@ namespace TicTacRog.Core.Domain
             bool mainDiagWin = true;
             for (int i = 0; i < size; i++)
             {
-                if (board.GetMark(new CellIndex(i, i)) != winner)
+                var symbol = board.GetSymbol(new CellIndex(i, i));
+                if (symbol == null || symbol.Type != winnerType)
                 {
                     mainDiagWin = false;
                     break;
@@ -154,7 +161,8 @@ namespace TicTacRog.Core.Domain
             bool antiDiagWin = true;
             for (int i = 0; i < size; i++)
             {
-                if (board.GetMark(new CellIndex(i, size - 1 - i)) != winner)
+                var symbol = board.GetSymbol(new CellIndex(i, size - 1 - i));
+                if (symbol == null || symbol.Type != winnerType)
                 {
                     antiDiagWin = false;
                     break;

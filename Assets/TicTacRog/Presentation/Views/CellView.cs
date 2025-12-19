@@ -26,7 +26,7 @@ namespace TicTacRog.Presentation.Views
 
         private CellIndex _index;
         private System.Action<CellIndex> _onClicked;
-        private Mark _currentMark = Mark.None;
+        private Symbol _currentSymbol;
         private Sequence _currentAnimation;
 
         public CellIndex Index => _index;
@@ -47,11 +47,11 @@ namespace TicTacRog.Presentation.Views
             ResetToNormalState();
         }
 
-        public void SetMarkImmediate(Mark mark)
+        public void SetSymbolImmediate(Symbol symbol)
         {
             KillAllAnimations();
             
-            _currentMark = mark;
+            _currentSymbol = symbol;
             UpdateLabel();
             
             ResetToNormalState();
@@ -104,9 +104,9 @@ namespace TicTacRog.Presentation.Views
             }
         }
 
-        public void SetMark(Mark mark)
+        public void SetSymbol(Symbol symbol)
         {
-            _currentMark = mark;
+            _currentSymbol = symbol;
             UpdateLabel();
         }
 
@@ -201,10 +201,16 @@ namespace TicTacRog.Presentation.Views
         {
             if (!label) return;
             
-            label.text = _currentMark switch
+            if (_currentSymbol == null)
             {
-                Mark.Cross => GameTextConstants.MarkCross,
-                Mark.Nought => GameTextConstants.MarkNought,
+                label.text = GameTextConstants.MarkEmpty;
+                return;
+            }
+            
+            label.text = _currentSymbol.Type switch
+            {
+                SymbolType.Cross => GameTextConstants.MarkCross,
+                SymbolType.Nought => GameTextConstants.MarkNought,
                 _ => GameTextConstants.MarkEmpty
             };
         }

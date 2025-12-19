@@ -8,22 +8,22 @@ namespace TicTacRog.Presentation.Animation
     public sealed class MoveAnimationEvent : IAnimationEvent
     {
         private readonly CellView _cellView;
-        private readonly Mark _mark;
+        private readonly Symbol _symbol;
         private readonly CellIndex _cellIndex;
 
         public CellIndex CellIndex => _cellIndex;
-        public Mark Mark => _mark;
+        public Symbol Symbol => _symbol;
 
-        public MoveAnimationEvent(CellView cellView, Mark mark, CellIndex cellIndex)
+        public MoveAnimationEvent(CellView cellView, Symbol symbol, CellIndex cellIndex)
         {
             _cellView = cellView;
-            _mark = mark;
+            _symbol = symbol;
             _cellIndex = cellIndex;
         }
 
         public IEnumerator PlayAnimation()
         {
-            _cellView.SetMark(_mark);
+            _cellView.SetSymbol(_symbol);
             yield return _cellView.PlayAnimation();
         }
         

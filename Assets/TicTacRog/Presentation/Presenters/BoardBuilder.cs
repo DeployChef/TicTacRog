@@ -74,8 +74,8 @@ namespace TicTacRog.Presentation.Presenters
         {
             foreach (var (index, cellView) in _cellViews)
             {
-                var mark = state.Board.GetMark(index);
-                cellView.SetMarkImmediate(mark);
+                var symbol = state.Board.GetSymbol(index);
+                cellView.SetSymbolImmediate(symbol);
             }
         }
     }

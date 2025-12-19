@@ -115,7 +115,7 @@ namespace TicTacRog.Presentation.StateMachine
 
         private void HandlePlayerMoveAnimationCompleted(GameState state)
         {
-            if (state.CurrentPlayer == Mark.Nought)
+            if (state.CurrentPlayerType == SymbolType.Nought)
             {
                 TransitionTo(GameFlowState.BotThinking);
             }
@@ -127,7 +127,7 @@ namespace TicTacRog.Presentation.StateMachine
 
         private void HandleBotMoveAnimationCompleted(GameState state)
         {
-            if (state.CurrentPlayer == Mark.Cross)
+            if (state.CurrentPlayerType == SymbolType.Cross)
             {
                 TransitionTo(GameFlowState.WaitingForPlayerInput);
             }
