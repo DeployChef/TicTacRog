@@ -198,6 +198,19 @@ namespace TicTacRog.Presentation.Presenters
         private void OnGameFinished(GameFinishedMessage evt)
         {
             Debug.Log($"[Presenter] Game finished: {evt.State.Status}");
+            
+            if (evt.State.Status == GameStatus.Win && evt.WinningCells.Count > 0)
+            {
+                foreach (var cellIndex in evt.WinningCells)
+                {
+                    if (_boardBuilder.CellViews.TryGetValue(cellIndex, out var cellView))
+                    {
+                        var winEvent = new WinHighlightAnimationEvent(cellView);
+                        _animationQueue.Enqueue(winEvent);
+                    }
+                }
+            }
+            
             _stateMachine.OnGameFinished();
         }
 
@@ -229,12 +242,6 @@ namespace TicTacRog.Presentation.Presenters
             
             SetCellsInteractionEnabled(false);
             _statusView.ResetButton.interactable = true;
-            
-            var state = _repository.GetCurrent();
-            if (state.Status == GameStatus.Win)
-            {
-                PlayWinHighlight(state);
-            }
         }
 
         #endregion
@@ -262,112 +269,6 @@ namespace TicTacRog.Presentation.Presenters
         {
             _boardBuilder.RedrawBoardImmediate(state);
             UpdateStatusText(state, _stateMachine.CurrentState);
-        }
-
-        #endregion
-
-        #region Win Animation
-
-        private void PlayWinHighlight(GameState state)
-        {
-            var winningCells = GetWinningCells(state);
-            
-            foreach (var cellIndex in winningCells)
-            {
-                if (_boardBuilder.CellViews.TryGetValue(cellIndex, out var cellView))
-                {
-                    var winEvent = new WinHighlightAnimationEvent(cellView);
-                    _animationQueue.Enqueue(winEvent);
-                }
-            }
-        }
-
-        private List<CellIndex> GetWinningCells(GameState state)
-        {
-            var winningCells = new List<CellIndex>();
-            var board = state.Board;
-            var winner = state.Winner;
-            var size = board.Size;
-
-            for (int row = 0; row < size; row++)
-            {
-                bool rowWin = true;
-                for (int col = 0; col < size; col++)
-                {
-                    if (board.GetMark(new CellIndex(row, col)) != winner)
-                    {
-                        rowWin = false;
-                        break;
-                    }
-                }
-                if (rowWin)
-                {
-                    for (int col = 0; col < size; col++)
-                    {
-                        winningCells.Add(new CellIndex(row, col));
-                    }
-                    return winningCells;
-                }
-            }
-
-            for (int col = 0; col < size; col++)
-            {
-                bool colWin = true;
-                for (int row = 0; row < size; row++)
-                {
-                    if (board.GetMark(new CellIndex(row, col)) != winner)
-                    {
-                        colWin = false;
-                        break;
-                    }
-                }
-                if (colWin)
-                {
-                    for (int row = 0; row < size; row++)
-                    {
-                        winningCells.Add(new CellIndex(row, col));
-                    }
-                    return winningCells;
-                }
-            }
-
-            bool mainDiagWin = true;
-            for (int i = 0; i < size; i++)
-            {
-                if (board.GetMark(new CellIndex(i, i)) != winner)
-                {
-                    mainDiagWin = false;
-                    break;
-                }
-            }
-            if (mainDiagWin)
-            {
-                for (int i = 0; i < size; i++)
-                {
-                    winningCells.Add(new CellIndex(i, i));
-                }
-                return winningCells;
-            }
-
-            bool antiDiagWin = true;
-            for (int i = 0; i < size; i++)
-            {
-                if (board.GetMark(new CellIndex(i, size - 1 - i)) != winner)
-                {
-                    antiDiagWin = false;
-                    break;
-                }
-            }
-            if (antiDiagWin)
-            {
-                for (int i = 0; i < size; i++)
-                {
-                    winningCells.Add(new CellIndex(i, size - 1 - i));
-                }
-                return winningCells;
-            }
-
-            return winningCells;
         }
 
         #endregion

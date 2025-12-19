@@ -1,10 +1,17 @@
-﻿using TicTacRog.Core.Domain;
+﻿using System.Collections.Generic;
+using TicTacRog.Core.Domain;
 
 namespace TicTacRog.Infrastructure.Events.Messages
 {
     public readonly struct GameFinishedMessage
     {
         public GameState State { get; }
-        public GameFinishedMessage(GameState state) => State = state;
+        public IReadOnlyList<CellIndex> WinningCells { get; }
+        
+        public GameFinishedMessage(GameState state, IReadOnlyList<CellIndex> winningCells)
+        {
+            State = state;
+            WinningCells = winningCells;
+        }
     }
 }

@@ -1,4 +1,4 @@
-﻿// TicTacRog/Core/UseCases/IGameEvents.cs
+﻿using System.Collections.Generic;
 using TicTacRog.Core.Domain;
 
 namespace TicTacRog.Core.UseCases
@@ -7,6 +7,6 @@ namespace TicTacRog.Core.UseCases
     {
         void OnGameStarted(GameState state);
         void OnMoveMade(GameState state, CellIndex lastMove);
-        void OnGameFinished(GameState state);
+        void OnGameFinished(GameState state, IReadOnlyList<CellIndex> winningCells);
     }
 }

@@ -1,4 +1,4 @@
-﻿using TicTacRog.Core.Domain;
+﻿using System.Collections.Generic;
 
 namespace TicTacRog.Core.Domain
 {
@@ -84,6 +84,92 @@ namespace TicTacRog.Core.Domain
             }
 
             return GameStatus.Draw;
+        }
+
+        public IReadOnlyList<CellIndex> GetWinningCells(Board board, Mark winner)
+        {
+            var winningCells = new List<CellIndex>();
+            var size = board.Size;
+
+            for (int row = 0; row < size; row++)
+            {
+                bool rowWin = true;
+                for (int col = 0; col < size; col++)
+                {
+                    if (board.GetMark(new CellIndex(row, col)) != winner)
+                    {
+                        rowWin = false;
+                        break;
+                    }
+                }
+                if (rowWin)
+                {
+                    for (int col = 0; col < size; col++)
+                    {
+                        winningCells.Add(new CellIndex(row, col));
+                    }
+                    return winningCells;
+                }
+            }
+
+            for (int col = 0; col < size; col++)
+            {
+                bool colWin = true;
+                for (int row = 0; row < size; row++)
+                {
+                    if (board.GetMark(new CellIndex(row, col)) != winner)
+                    {
+                        colWin = false;
+                        break;
+                    }
+                }
+                if (colWin)
+                {
+                    for (int row = 0; row < size; row++)
+                    {
+                        winningCells.Add(new CellIndex(row, col));
+                    }
+                    return winningCells;
+                }
+            }
+
+            bool mainDiagWin = true;
+            for (int i = 0; i < size; i++)
+            {
+                if (board.GetMark(new CellIndex(i, i)) != winner)
+                {
+                    mainDiagWin = false;
+                    break;
+                }
+            }
+            if (mainDiagWin)
+            {
+                for (int i = 0; i < size; i++)
+                {
+                    winningCells.Add(new CellIndex(i, i));
+                }
+                return winningCells;
+            }
+
+            bool antiDiagWin = true;
+            for (int i = 0; i < size; i++)
+            {
+                if (board.GetMark(new CellIndex(i, size - 1 - i)) != winner)
+                {
+                    antiDiagWin = false;
+                    break;
+                }
+            }
+            if (antiDiagWin)
+            {
+                for (int i = 0; i < size; i++)
+                {
+                    winningCells.Add(new CellIndex(i, size - 1 - i));
+                }
+                return winningCells;
+            }
+
+            return winningCells;
         }
     }
 }

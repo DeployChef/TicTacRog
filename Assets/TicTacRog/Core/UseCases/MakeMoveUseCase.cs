@@ -37,27 +37,25 @@ namespace TicTacRog.Core.UseCases
 
             var status = _ruleSet.Evaluate(board, currentPlayer, targetCell);
 
-            // Устанавливаем статус и победителя
-            if (status == GameStatus.Win)
+            _boardRepository.Save(state);
+            _gameEvents.OnMoveMade(state, targetCell);
+
+            if (status == GameStatus.InProgress)
             {
-                state.SetStatus(status, currentPlayer);  // Победитель = текущий игрок
+                state.SetStatus(status);
+                state.SwitchPlayer();
+            }
+            else if (status == GameStatus.Win)
+            {
+                state.SetStatus(status, currentPlayer);
+                var winningCells = _ruleSet.GetWinningCells(board, currentPlayer);
+                _gameEvents.OnGameFinished(state, winningCells);
             }
             else
             {
                 state.SetStatus(status);
+                _gameEvents.OnGameFinished(state, System.Array.Empty<CellIndex>());
             }
-
-            if (status == GameStatus.InProgress)
-            {
-                state.SwitchPlayer();
-            }
-            else
-            {
-                _gameEvents.OnGameFinished(state);
-            }
-
-            _boardRepository.Save(state);
-            _gameEvents.OnMoveMade(state, targetCell);
 
             return Result.Success();
         }
