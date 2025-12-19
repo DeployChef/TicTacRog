@@ -75,6 +75,10 @@ namespace TicTacRog.Presentation.DI
             builder.Register<BotController>(Lifetime.Singleton)
                 .WithParameter("botThinkDelay", _botThinkDelay);
 
+            // Presenter helpers
+            builder.Register<BoardBuilder>(Lifetime.Singleton);
+            builder.Register<StatusTextFormatter>(Lifetime.Singleton);
+
             // Presenter
             builder.Register<GamePresenter>(Lifetime.Singleton);
 

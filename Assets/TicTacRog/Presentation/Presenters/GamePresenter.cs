@@ -26,12 +26,12 @@ namespace TicTacRog.Presentation.Presenters
         private readonly IBoardRepository _repository;
         private readonly AnimationQueue _animationQueue;
         private readonly GameFlowStateMachine _stateMachine;
+        private readonly BoardBuilder _boardBuilder;
+        private readonly StatusTextFormatter _statusFormatter;
 
         private IDisposable _startedSub;
         private IDisposable _movedSub;
         private IDisposable _finishedSub;
-
-        private Dictionary<CellIndex, CellView> _cellViews = new();
 
         public GamePresenter(
             BoardView boardView,
@@ -41,7 +41,9 @@ namespace TicTacRog.Presentation.Presenters
             MakeMoveUseCase makeMove,
             IBoardRepository repository,
             AnimationQueue animationQueue,
-            GameFlowStateMachine stateMachine)
+            GameFlowStateMachine stateMachine,
+            BoardBuilder boardBuilder,
+            StatusTextFormatter statusFormatter)
         {
             _boardView = boardView ?? throw new ArgumentNullException(nameof(boardView));
             _statusView = statusView ?? throw new ArgumentNullException(nameof(statusView));
@@ -51,11 +53,13 @@ namespace TicTacRog.Presentation.Presenters
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _animationQueue = animationQueue ?? throw new ArgumentNullException(nameof(animationQueue));
             _stateMachine = stateMachine ?? throw new ArgumentNullException(nameof(stateMachine));
+            _boardBuilder = boardBuilder ?? throw new ArgumentNullException(nameof(boardBuilder));
+            _statusFormatter = statusFormatter ?? throw new ArgumentNullException(nameof(statusFormatter));
         }
 
         public void Initialize()
         {
-            BuildBoard();
+            _boardBuilder.BuildBoard(OnCellClicked);
 
             // Подписываемся на доменные события
             _startedSub = _bus.Subscribe<GameStartedMessage>(OnGameStarted);
@@ -133,7 +137,7 @@ namespace TicTacRog.Presentation.Presenters
             _animationQueue.Clear();
             
             // 2. Принудительно сбрасываем все клетки (на случай если анимация не успела остановиться)
-            foreach (var cellView in _cellViews.Values)
+            foreach (var cellView in _boardBuilder.CellViews.Values)
             {
                 cellView.SetMarkImmediate(Mark.None);
             }
@@ -169,7 +173,7 @@ namespace TicTacRog.Presentation.Presenters
             if (!state.Board.IsEmpty(index))
             {
                 // Анимация ошибки
-                if (_cellViews.TryGetValue(index, out var cellView))
+                if (_boardBuilder.CellViews.TryGetValue(index, out var cellView))
                 {
                     cellView.PlayErrorShake();
                 }
@@ -207,7 +211,7 @@ namespace TicTacRog.Presentation.Presenters
             Debug.Log($"[Presenter] Move made at {msg.LastMove.Row},{msg.LastMove.Column}");
             
             // Добавляем анимацию в очередь
-            if (_cellViews.TryGetValue(msg.LastMove, out var cellView))
+            if (_boardBuilder.CellViews.TryGetValue(msg.LastMove, out var cellView))
             {
                 var mark = msg.State.Board.GetMark(msg.LastMove);
                 var animEvent = new MoveAnimationEvent(cellView, mark, msg.LastMove);
@@ -283,63 +287,9 @@ namespace TicTacRog.Presentation.Presenters
 
         #region Board Building
 
-        private void BuildBoard()
-        {
-            var state = _repository.GetCurrent();
-            
-            if (state == null)
-            {
-                Debug.LogError("[GamePresenter] Cannot build board: game state is null! " +
-                    "Make sure StartNewGameUseCase.Execute() is called BEFORE GamePresenter.Initialize()");
-                return;
-            }
-            
-            if (state.Board == null)
-            {
-                Debug.LogError("[GamePresenter] Cannot build board: board is null!");
-                return;
-            }
-            
-            var size = state.Board.Size;
-            
-            // Проверяем что Cell Prefab подключен
-            if (_boardView.CellPrefab == null)
-            {
-                Debug.LogError("[GamePresenter] Cannot build board: Cell Prefab is not assigned! " +
-                    "Please assign Cell prefab to BoardView in Inspector.");
-                return;
-            }
-
-            for (int row = 0; row < size; row++)
-            {
-                for (int col = 0; col < size; col++)
-                {
-                    var index = new CellIndex(row, col);
-                    var go = UnityEngine.Object.Instantiate(_boardView.CellPrefab, _boardView.CellsRoot);
-                    var view = go.GetComponent<CellView>();
-                    
-                    if (view == null)
-                    {
-                        Debug.LogError($"CellView component not found on prefab!");
-                        continue;
-                    }
-                    
-                    view.Init(index, OnCellClicked);
-                    _cellViews[index] = view;
-                }
-            }
-
-            Debug.Log($"[Presenter] Board built: {size}x{size} = {_cellViews.Count} cells");
-        }
-
         private void RedrawBoardImmediate(GameState state)
         {
-            foreach (var (index, cellView) in _cellViews)
-            {
-                var mark = state.Board.GetMark(index);
-                cellView.SetMarkImmediate(mark);
-            }
-
+            _boardBuilder.RedrawBoardImmediate(state);
             UpdateStatusText(state, _stateMachine.CurrentState);
         }
 
@@ -359,7 +309,7 @@ namespace TicTacRog.Presentation.Presenters
         /// </summary>
         private void SetCellsInteractionEnabled(bool enabled)
         {
-            foreach (var cellView in _cellViews.Values)
+            foreach (var cellView in _boardBuilder.CellViews.Values)
             {
                 cellView.Button.interactable = enabled;
             }
@@ -369,45 +319,8 @@ namespace TicTacRog.Presentation.Presenters
 
         private void UpdateStatusText(GameState state, GameFlowState flowState)
         {
-            string statusText = GetStatusText(state, flowState);
+            string statusText = _statusFormatter.GetStatusText(state, flowState);
             _statusView.StatusText.text = statusText;
-        }
-
-        private string GetStatusText(GameState state, GameFlowState flowState)
-        {
-            // Если игра закончена
-            if (state.Status != GameStatus.InProgress)
-            {
-                return state.Status switch
-                {
-                    GameStatus.Win => GetWinText(state),
-                    GameStatus.Draw => "🤝 Draw!",
-                    _ => "Game Over"
-                };
-            }
-
-            // Игра в процессе - показываем состояние
-            return flowState switch
-            {
-                GameFlowState.WaitingForPlayerInput => "Your Turn (X)",
-                GameFlowState.AnimatingPlayerMove => "Placing X...",
-                GameFlowState.BotThinking => "Bot Thinking...",
-                GameFlowState.AnimatingBotMove => "Bot Placing O...",
-                GameFlowState.GameFinished => "Game Finished",
-                _ => "In Progress"
-            };
-        }
-
-        private string GetWinText(GameState state)
-        {
-            var winner = state.Winner != Mark.None ? state.Winner : state.CurrentPlayer;
-            
-            return winner switch
-            {
-                Mark.Cross => "🎉 You Win!",
-                Mark.Nought => "😢 Bot Wins!",
-                _ => "Game Over"
-            };
         }
 
         #endregion

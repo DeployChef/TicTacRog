@@ -18,7 +18,7 @@ namespace TicTacRog.Presentation.Views
         [Header("Animation Settings")]
         [SerializeField] private float _animationDuration = 0.4f;
         [SerializeField] private Ease _scaleEase = Ease.OutBack;
-        [SerializeField] private float _punchScale = 1.15f;
+        [SerializeField] private float _punchScale = AnimationConstants.PunchScale;
 
         [Header("Colors")]
         [SerializeField] private Color _normalColor = Color.white;
@@ -32,27 +32,19 @@ namespace TicTacRog.Presentation.Views
         public CellIndex Index => _index;
         public Button Button => _button;
 
-        private void Awake()
-        {
-            DOTween.Init();
-        }
-
         public void Init(CellIndex index, System.Action<CellIndex> onClicked)
         {
             _index = index;
             _onClicked = onClicked;
+            
+            if (_button == null)
+            {
+                Debug.LogError("[CellView] Button component is not assigned!");
+                return;
+            }
+            
             _button.onClick.AddListener(HandleClick);
-            
-            if (_canvasGroup != null)
-            {
-                _canvasGroup.alpha = 1f;
-            }
-            transform.localScale = Vector3.one;
-            
-            if (_background != null)
-            {
-                _background.color = _normalColor;
-            }
+            ResetToNormalState();
         }
 
         public void SetMarkImmediate(Mark mark)
@@ -81,22 +73,34 @@ namespace TicTacRog.Presentation.Views
         private void ResetToNormalState()
         {
             transform.localScale = Vector3.one;
-            
+            SetBackgroundColor(_normalColor);
+            SetLabelAlpha(1f);
+            SetCanvasGroupAlpha(1f);
+        }
+
+        private void SetBackgroundColor(Color color)
+        {
             if (_background != null)
             {
-                _background.color = _normalColor;
+                _background.color = color;
             }
-            
+        }
+
+        private void SetLabelAlpha(float alpha)
+        {
             if (_label != null)
             {
                 var color = _label.color;
-                color.a = 1f;
+                color.a = alpha;
                 _label.color = color;
             }
-            
+        }
+
+        private void SetCanvasGroupAlpha(float alpha)
+        {
             if (_canvasGroup != null)
             {
-                _canvasGroup.alpha = 1f;
+                _canvasGroup.alpha = alpha;
             }
         }
 
@@ -109,45 +113,59 @@ namespace TicTacRog.Presentation.Views
         public IEnumerator PlayAnimation()
         {
             _currentAnimation?.Kill();
-
             _currentAnimation = DOTween.Sequence();
 
+            BuildScaleAnimation();
+            BuildLabelFadeAnimation();
+            BuildBackgroundHighlightAnimation();
+
+            yield return _currentAnimation.WaitForCompletion();
+        }
+
+        private void BuildScaleAnimation()
+        {
             transform.localScale = Vector3.zero;
+            
             _currentAnimation.Append(
-                transform.DOScale(_punchScale, _animationDuration * 0.6f)
+                transform.DOScale(_punchScale, _animationDuration * AnimationConstants.ScaleUpDurationRatio)
                     .SetEase(_scaleEase)
             );
             
             _currentAnimation.Append(
-                transform.DOScale(1f, _animationDuration * 0.4f)
+                transform.DOScale(1f, _animationDuration * AnimationConstants.ScaleDownDurationRatio)
                     .SetEase(Ease.OutQuad)
             );
+        }
 
-            if (_label != null)
-            {
-                var color = _label.color;
-                color.a = 0f;
-                _label.color = color;
-                
-                _currentAnimation.Join(
-                    _label.DOFade(1f, _animationDuration * 0.5f)
-                        .SetEase(Ease.OutQuad)
-                );
-            }
+        private void BuildLabelFadeAnimation()
+        {
+            if (_label == null) return;
 
-            if (_background != null)
-            {
-                _currentAnimation.Insert(0,
-                    _background.DOColor(_highlightColor, _animationDuration * 0.3f)
-                        .SetEase(Ease.OutQuad)
-                );
-                _currentAnimation.Append(
-                    _background.DOColor(_normalColor, _animationDuration * 0.3f)
-                        .SetEase(Ease.InQuad)
-                );
-            }
+            var color = _label.color;
+            color.a = 0f;
+            _label.color = color;
+            
+            _currentAnimation.Join(
+                _label.DOFade(1f, _animationDuration * AnimationConstants.FadeInDurationRatio)
+                    .SetEase(Ease.OutQuad)
+            );
+        }
 
-            yield return _currentAnimation.WaitForCompletion();
+        private void BuildBackgroundHighlightAnimation()
+        {
+            if (_background == null) return;
+
+            var highlightDuration = _animationDuration * AnimationConstants.HighlightDurationRatio;
+            
+            _currentAnimation.Insert(0,
+                _background.DOColor(_highlightColor, highlightDuration)
+                    .SetEase(Ease.OutQuad)
+            );
+            
+            _currentAnimation.Append(
+                _background.DOColor(_normalColor, highlightDuration)
+                    .SetEase(Ease.InQuad)
+            );
         }
 
         public IEnumerator PlayWinHighlight()
@@ -156,10 +174,10 @@ namespace TicTacRog.Presentation.Views
 
             var sequence = DOTween.Sequence();
             
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < AnimationConstants.WinHighlightCycles; i++)
             {
-                sequence.Append(_background.DOColor(_highlightColor, 0.3f));
-                sequence.Append(_background.DOColor(_normalColor, 0.3f));
+                sequence.Append(_background.DOColor(_highlightColor, AnimationConstants.WinHighlightDuration));
+                sequence.Append(_background.DOColor(_normalColor, AnimationConstants.WinHighlightDuration));
             }
 
             yield return sequence.WaitForCompletion();
@@ -169,7 +187,13 @@ namespace TicTacRog.Presentation.Views
         {
             transform.DOKill(complete: true);
             
-            transform.DOShakePosition(0.3f, strength: 10f, vibrato: 10, randomness: 90, snapping: false, fadeOut: true)
+            transform.DOShakePosition(
+                AnimationConstants.ErrorShakeDuration,
+                strength: AnimationConstants.ErrorShakeStrength,
+                vibrato: AnimationConstants.ErrorShakeVibrato,
+                randomness: AnimationConstants.ErrorShakeRandomness,
+                snapping: false,
+                fadeOut: true)
                 .SetEase(Ease.OutQuad);
         }
 
@@ -179,9 +203,9 @@ namespace TicTacRog.Presentation.Views
             
             _label.text = _currentMark switch
             {
-                Mark.Cross => "X",
-                Mark.Nought => "O",
-                _ => ""
+                Mark.Cross => GameTextConstants.MarkCross,
+                Mark.Nought => GameTextConstants.MarkNought,
+                _ => GameTextConstants.MarkEmpty
             };
         }
 

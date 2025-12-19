@@ -4,6 +4,7 @@ using TicTacRog.Presentation.Presenters;
 using TicTacRog.Presentation;
 using UnityEngine;
 using VContainer.Unity;
+using DG.Tweening;
 
 namespace TicTacRog.Presentation.DI
 {
@@ -37,6 +38,9 @@ namespace TicTacRog.Presentation.DI
         {
             Debug.Log($"[GameEntryPoint] Starting game: {_boardSize}x{_boardSize}, Starting player: {_startingPlayer}");
             
+            // Инициализируем DOTween глобально один раз
+            InitializeDOTween();
+            
             // ВАЖНО: Сначала создаем игру, ПОТОМ инициализируем презентер!
             // Иначе презентер попытается прочитать несуществующее состояние
             
@@ -56,6 +60,17 @@ namespace TicTacRog.Presentation.DI
             _botController.Initialize();
             
             Debug.Log("[GameEntryPoint] Game started successfully!");
+        }
+
+        private static void InitializeDOTween()
+        {
+            // Инициализируем DOTween один раз при старте приложения
+            // Это безопасно вызывать несколько раз, но лучше один раз
+            if (!DOTween.isInitialized)
+            {
+                DOTween.Init();
+                Debug.Log("[GameEntryPoint] DOTween initialized");
+            }
         }
     }
 }
