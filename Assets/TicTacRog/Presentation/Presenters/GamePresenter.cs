@@ -16,6 +16,7 @@ namespace TicTacRog.Presentation.Presenters
     {
         private readonly BoardView _boardView;
         private readonly StatusView _statusView;
+        private readonly HandView _handView;
         private readonly IMessageBus _bus;
         private readonly StartNewGameUseCase _startNewGame;
         private readonly MakeMoveUseCase _makeMove;
@@ -25,6 +26,7 @@ namespace TicTacRog.Presentation.Presenters
         private readonly BoardBuilder _boardBuilder;
         private readonly StatusTextFormatter _statusFormatter;
 
+
         private IDisposable _startedSub;
         private IDisposable _movedSub;
         private IDisposable _finishedSub;
@@ -32,6 +34,7 @@ namespace TicTacRog.Presentation.Presenters
         public GamePresenter(
             BoardView boardView,
             StatusView statusView,
+            HandView handView,
             IMessageBus bus,
             StartNewGameUseCase startNewGame,
             MakeMoveUseCase makeMove,
@@ -43,6 +46,7 @@ namespace TicTacRog.Presentation.Presenters
         {
             _boardView = boardView ?? throw new ArgumentNullException(nameof(boardView));
             _statusView = statusView ?? throw new ArgumentNullException(nameof(statusView));
+            _handView = handView ?? throw new ArgumentNullException(nameof(handView));
             _bus = bus ?? throw new ArgumentNullException(nameof(bus));
             _startNewGame = startNewGame ?? throw new ArgumentNullException(nameof(startNewGame));
             _makeMove = makeMove ?? throw new ArgumentNullException(nameof(makeMove));
@@ -55,7 +59,7 @@ namespace TicTacRog.Presentation.Presenters
 
         public void Initialize()
         {
-            _boardBuilder.BuildBoard(OnCellClicked);
+            _boardBuilder.BuildBoard(OnCellDropped);
 
             _startedSub = _bus.Subscribe<GameStartedMessage>(OnGameStarted);
             _movedSub = _bus.Subscribe<MoveMadeMessage>(OnMoveMade);
@@ -78,6 +82,7 @@ namespace TicTacRog.Presentation.Presenters
             if (currentState != null)
             {
                 RedrawBoardImmediate(currentState);
+                UpdateHandView(currentState);
             }
             else
             {
@@ -134,16 +139,32 @@ namespace TicTacRog.Presentation.Presenters
             }
         }
 
-        private void OnCellClicked(CellIndex index)
+        private void OnSymbolCardDropped(Symbol symbol, CellIndex? cellIndex)
+        {
+            // Если drop был на ячейку - делаем ход
+            if (cellIndex.HasValue)
+            {
+                TryMakeMoveWithSymbol(cellIndex.Value, symbol);
+            }
+            // Если drop не на ячейку - просто игнорируем (карточка вернется на место)
+        }
+
+        private void OnCellDropped(CellIndex index, Symbol symbol)
+        {
+            // Обработка drop через IDropHandler в CellView
+            TryMakeMoveWithSymbol(index, symbol);
+        }
+
+        private void TryMakeMoveWithSymbol(CellIndex index, Symbol symbol)
         {
             if (!_stateMachine.CanPlayerMove())
             {
                 Debug.Log($"Cannot move: current state is {_stateMachine.CurrentState}");
                 return;
             }
-            
+
             var state = _repository.GetCurrent();
-            
+
             if (state.CurrentPlayerType != SymbolType.Cross)
             {
                 Debug.Log("Not player's turn");
@@ -158,24 +179,26 @@ namespace TicTacRog.Presentation.Presenters
                 }
                 return;
             }
-            
-            // Временно берем первый символ из руки (позже будет drag & drop)
+
             var playerHand = state.PlayerHand;
-            if (playerHand.IsEmpty)
+            if (!playerHand.Contains(symbol))
             {
-                Debug.LogWarning("[GamePresenter] Player hand is empty, cannot make move");
+                Debug.LogWarning("[GamePresenter] Symbol is not in player's hand");
                 return;
             }
-            
-            var symbol = playerHand.Symbols[0];
+
             var result = _makeMove.Execute(index, symbol);
-            
+
             if (!result.IsSuccess)
             {
                 Debug.LogError($"[GamePresenter] Failed to make move: {result.ErrorMessage}");
+                if (_boardBuilder.CellViews.TryGetValue(index, out var cellView))
+                {
+                    cellView.PlayErrorShake();
+                }
                 return;
             }
-            
+
             _stateMachine.OnPlayerMoved();
         }
 
@@ -189,6 +212,7 @@ namespace TicTacRog.Presentation.Presenters
             
             _animationQueue.Clear();
             RedrawBoardImmediate(evt.State);
+            UpdateHandView(evt.State);
             _stateMachine.OnGameStarted();
         }
 
@@ -268,6 +292,7 @@ namespace TicTacRog.Presentation.Presenters
             
             var state = _repository.GetCurrent();
             UpdateStatusText(state, _stateMachine.CurrentState);
+            UpdateHandView(state);
         }
 
         #endregion
@@ -292,18 +317,25 @@ namespace TicTacRog.Presentation.Presenters
 
         private void SetCellsInteractionEnabled(bool enabled)
         {
-            foreach (var cellView in _boardBuilder.CellViews.Values)
-            {
-                cellView.Button.interactable = enabled;
-            }
-
-            Debug.Log($"[Presenter] Cells {(enabled ? "enabled" : "disabled")}");
+            // Кнопки отключены, так как используем только drop
+            // Метод оставлен для совместимости, но ничего не делает
         }
 
         private void UpdateStatusText(GameState state, GameFlowState flowState)
         {
             string statusText = _statusFormatter.GetStatusText(state, flowState);
             _statusView.StatusText.text = statusText;
+        }
+
+        private void UpdateHandView(GameState state)
+        {
+            if (_handView == null) return;
+
+            // Обновляем руку только для игрока (Cross)
+            if (state.CurrentPlayerType == SymbolType.Cross)
+            {
+                _handView.UpdateHand(state.PlayerHand.Symbols, OnSymbolCardDropped);
+            }
         }
 
         #endregion

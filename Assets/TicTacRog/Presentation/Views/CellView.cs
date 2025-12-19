@@ -1,16 +1,16 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TicTacRog.Core.Domain;
 using TMPro;
 using DG.Tweening;
 
 namespace TicTacRog.Presentation.Views
 {
-    public sealed class CellView : MonoBehaviour, IAnimatable
+    public sealed class CellView : MonoBehaviour, IAnimatable, IDropHandler
     {
         [Header("Components")]
-        [SerializeField] private Button button;
         [SerializeField] private TextMeshProUGUI label;
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private Image background;
@@ -25,25 +25,16 @@ namespace TicTacRog.Presentation.Views
         [SerializeField] private Color highlightColor = Color.yellow;
 
         private CellIndex _index;
-        private System.Action<CellIndex> _onClicked;
+        private System.Action<CellIndex, Symbol> _onDropped;
         private Symbol _currentSymbol;
         private Sequence _currentAnimation;
 
         public CellIndex Index => _index;
-        public Button Button => button;
 
-        public void Init(CellIndex index, System.Action<CellIndex> onClicked)
+        public void Init(CellIndex index, System.Action<CellIndex, Symbol> onDropped)
         {
             _index = index;
-            _onClicked = onClicked;
-            
-            if (!button)
-            {
-                Debug.LogError("[CellView] Button component is not assigned!");
-                return;
-            }
-            
-            button.onClick.AddListener(HandleClick);
+            _onDropped = onDropped;
             ResetToNormalState();
         }
 
@@ -221,13 +212,21 @@ namespace TicTacRog.Presentation.Views
             transform.DOKill();
             if (label) label.DOKill();
             if (background) background.DOKill();
-            
-            button.onClick.RemoveListener(HandleClick);
         }
 
-        private void HandleClick()
+        public void OnDrop(PointerEventData eventData)
         {
-            _onClicked?.Invoke(_index);
+            // Проверяем, есть ли перетаскиваемая карточка
+            var draggedObject = eventData.pointerDrag;
+            if (draggedObject != null)
+            {
+                var symbolCard = draggedObject.GetComponent<SymbolCardView>();
+                if (symbolCard != null && symbolCard.Symbol != null && _onDropped != null)
+                {
+                    // Вызываем callback для обработки drop
+                    _onDropped(_index, symbolCard.Symbol);
+                }
+            }
         }
     }
 }

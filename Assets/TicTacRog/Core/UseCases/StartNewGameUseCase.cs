@@ -24,7 +24,7 @@ namespace TicTacRog.Core.UseCases
             var board = new Board(boardSize);
             
             // Создаем деки: у игрока 5 крестиков, у бота 5 ноликов
-            var playerDeckSymbols = Enumerable.Range(0, 5)
+            var playerDeckSymbols = Enumerable.Range(0, 3)
                 .Select(_ => new Symbol(SymbolType.Cross))
                 .ToList();
             var playerDeck = new Deck(playerDeckSymbols);

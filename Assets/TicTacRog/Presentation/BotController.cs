@@ -101,7 +101,9 @@ namespace TicTacRog.Presentation
             }
             else
             {
-                Debug.LogError("[BotController] Bot failed to make move!");
+                Debug.LogWarning("[BotController] Bot failed to make move (might have no cards or no valid moves)");
+                // Если бот не смог сделать ход, пропускаем ход
+                _stateMachine.OnBotCannotMove();
             }
         }
     }

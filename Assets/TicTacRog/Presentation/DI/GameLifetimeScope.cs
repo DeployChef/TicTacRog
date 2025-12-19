@@ -20,6 +20,7 @@ namespace TicTacRog.Presentation.DI
         [Header("Views")]
         [SerializeField] private BoardView boardView;
         [SerializeField] private StatusView statusView;
+        [SerializeField] private HandView handView;
         [SerializeField] private AnimationQueue animationQueue;
 
         [Header("Game Settings")]
@@ -35,6 +36,7 @@ namespace TicTacRog.Presentation.DI
             
             builder.RegisterInstance(boardView);
             builder.RegisterInstance(statusView);
+            builder.RegisterInstance(handView);
             builder.RegisterInstance(animationQueue);
             builder.RegisterInstance<MonoBehaviour>(animationQueue);
 
@@ -85,6 +87,13 @@ namespace TicTacRog.Presentation.DI
                 Debug.LogError("[GameLifetimeScope] StatusView is not assigned! " +
                     "Please drag StatusView from scene to the field in Inspector.");
                 throw new System.NullReferenceException("StatusView is null");
+            }
+            
+            if (!handView)
+            {
+                Debug.LogError("[GameLifetimeScope] HandView is not assigned! " +
+                    "Please drag HandView from scene to the field in Inspector.");
+                throw new System.NullReferenceException("HandView is null");
             }
             
             if (!animationQueue)

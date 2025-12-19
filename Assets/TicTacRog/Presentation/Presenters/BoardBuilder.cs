@@ -20,7 +20,7 @@ namespace TicTacRog.Presentation.Presenters
             _repository = repository ?? throw new System.ArgumentNullException(nameof(repository));
         }
 
-        public void BuildBoard(System.Action<CellIndex> onCellClicked)
+        public void BuildBoard(System.Action<CellIndex, Symbol> onCellDropped)
         {
             var state = _repository.GetCurrent();
             
@@ -62,7 +62,7 @@ namespace TicTacRog.Presentation.Presenters
                         continue;
                     }
                     
-                    view.Init(index, onCellClicked);
+                    view.Init(index, onCellDropped);
                     _cellViews[index] = view;
                 }
             }
